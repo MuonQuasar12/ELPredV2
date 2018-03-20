@@ -1,5 +1,5 @@
-#ifndef CONSTIT_H
-#define CONSTIT_H
+#ifndef CONSTITBASE_H
+#define CONSTITBASE_H
 
 #include <string>
 #include <map>
@@ -10,17 +10,15 @@
 
 using namespace std;
 
-class constituency{
+class constituencyBase{
 
-private:
+protected:
 	string name;
-	string MP;
 	string country;
 	string county;
 	int area;
 	int electorate;
 	map<string,int> votesCast;
-	bool hold = true;
 	bool doNotSwing = false;
 	
 
@@ -28,47 +26,38 @@ public:
 
 	static normal_distribution<double> dist;
 
-	constituency(string name_, string MP_, string country_, string county_, int area_, int electorate_, map<string,int> votesCast_, bool isHeld = true,bool preventSwing = false){
+	constituencyBase(string name_, string country_, string county_, int area_, int electorate_, map<string,int> votesCast_, bool preventSwing = false){
 		name = name_;
-		MP = MP_;
 		country = country_;
 		county = county_;
 		area = area_;
 		electorate = electorate_;
 		votesCast = votesCast_;
 		doNotSwing = preventSwing;
-		hold = isHeld;
 	}
-	constituency(){
+	constituencyBase(){
 		name = "null";
 	}
 
 	void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
 
 	string getName();
-	string getMP();
 	string getCountry();
 	string getCounty();
-	string getParty();
-	string getSecondPlace();
 	int getArea();
 	int getElectorate();
 	
 	int getVotesCast(const string& party);
 	int getVotesCast();
-	int getMajority();
-	double getMajorityFrac();
 	double getVoteShare(const string& party);
 	double getTurnout();
 	map<string,double> getVoteShareMap();
 	bool partyContestsSeat(const string& party);
 	vector<string> partiesContestingSeat();
-	bool isHeld();
 	bool preventSwing();
-	void setHold(bool isAHold);
 	void setPreventSwing(bool opt);
 
-	map<string,double> getSwings(constituency oldResult);
+	map<string,double> getSwings(constituencyBase oldResult);
 
 	void print(int opt = 1);
 
