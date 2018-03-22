@@ -34,7 +34,7 @@ public:
 
 	void addSubConstit(constituencyFPTP subConstit);
 
-	void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
+	void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false) override;
 
 	map<string,int> getSeats();
 	int numSeats(string party);

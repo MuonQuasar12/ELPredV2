@@ -7,6 +7,7 @@
 #include "vars.h"
 #include <memory>
 #include <random>
+#include "votingArea.h"
 
 using namespace std;
 
@@ -17,49 +18,48 @@ protected:
 	string country;
 	string county;
 	int area;
-	int electorate;
-	map<string,int> votesCast;
+	map<string,votingArea> votingAreas;
 	bool doNotSwing = false;
-	
+	vector<string> parties;	
 
 public:
 
-	static normal_distribution<double> dist;
-
-	constituencyBase(string name_, string country_, string county_, int area_, int electorate_, map<string,int> votesCast_, bool preventSwing = false){
+	constituencyBase(string name_, string country_, string county_, int area_, bool preventSwing = false){
 		name = name_;
 		country = country_;
 		county = county_;
 		area = area_;
-		electorate = electorate_;
-		votesCast = votesCast_;
 		doNotSwing = preventSwing;
 	}
 	constituencyBase(){
 		name = "null";
 	}
 
-	void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
+	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
 
-	string getName();
-	string getCountry();
-	string getCounty();
-	int getArea();
+	string getName(){return name;};
+	string getCountry(){return country;};
+	string getCounty(){return county;};
+	int getArea(){return area;};
 	int getElectorate();
+
+	void addVoteArea(string nameArea, int electorateArea, map<string,int> votesCast_);
+	votingArea getVoteArea(string nameArea);
 	
 	int getVotesCast(const string& party);
 	int getVotesCast();
 	double getVoteShare(const string& party);
 	double getTurnout();
 	map<string,double> getVoteShareMap();
+	map<string,int> getVotesMap();
 	bool partyContestsSeat(const string& party);
-	vector<string> partiesContestingSeat();
-	bool preventSwing();
+	vector<string> partiesContestingSeat(){return parties;}
+	bool preventSwing(){return doNotSwing;}
 	void setPreventSwing(bool opt);
 
 	map<string,double> getSwings(constituencyBase oldResult);
 
-	void print(int opt = 1);
+	virtual void print(int opt = 1) = 0;
 
 };
 

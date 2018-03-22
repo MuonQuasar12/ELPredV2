@@ -28,18 +28,18 @@ public:
 		hold = isHeld;
 	}
 
-	void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
+	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false) override;
 
-	string getMP();
+	string getMP(){return MP;}
 	string getParty();
 	string getSecondPlace();
 	
 	int getMajority();
 	double getMajorityFrac();
-	bool isHeld();
-	void setHold(bool isAHold);
+	bool isHeld(){return hold;}
+	void setHold(bool isAHold){hold = isAHold;}
 
-	void print(int opt = 1);
+	virtual void print(int opt = 1) override;
 
 };
 
