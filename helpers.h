@@ -2,7 +2,7 @@
 #define HELPERS_H
 
 #include <string>
-#include "constituency.h"
+#include "constituencyBase.h"
 #include "election.h"
 #include <map>
 #include <utility>
@@ -15,9 +15,9 @@ namespace elPred{
 
 	election loadfile(std::string fileName);
 
-	constituency constitSearch(election el);
+	unique_ptr<constituencyBase> constitSearch(election el);
 
-	constituency enterNewResults(constituency constit);
+	unique_ptr<constituencyBase> enterNewResults(constituencyBase& constit);
 
 	map<int,map<string,double>> generateSwingMap(map<vector<int>,map<string,double>> rawSwings, election el);
 

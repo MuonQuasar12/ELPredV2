@@ -2,7 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include "election.h"
-#include "constituency.h"
+#include "constituencyBase.h"
+#include "constituencyFPTP.h"
 #include "elProj.h"
 #include "helpers.h"
 #include <sstream>
@@ -21,31 +22,31 @@ election elProj::getLatest(){
 
 void elProj::addNewResult(){
 
-	constituency constit = elPred::constitSearch(oldElWDec);
+	unique_ptr<constituencyBase> constit = elPred::constitSearch(oldElWDec);
 
-	if(constit.getName() == "null") return;
+	if(constit->getName() == "null") return;
 
-	constituency newConstit = elPred::enterNewResults(constit);
+	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(*constit).release()));
 
-	if(newConstit.getParty()== "null") return;
+	if(newConstit->getParty()== "null") return;
 
 	election tmpEl = oldElWDec;
 
-	oldElWDec = tmpEl.addNewResult(newConstit);
+	oldElWDec = tmpEl.addNewResult(*newConstit);
 
 	//check if result has already been added
 	for(int i =0; i<setConstits.size(); i++){
 
-		if(setConstits[i].first.getName() == newConstit.getName()){
+		if(setConstits[i].first->getName() == newConstit->getName()){
 
-			setConstits[i] = pair<constituency,constituency>(constit,newConstit);
+			setConstits[i] = make_pair(constit,newConstit);
 
 			return;
 		}
 
 	}	
 
-	setConstits.push_back(pair<constituency,constituency>(constit,newConstit));
+	setConstits.push_back(make_pair(constit,newConstit));
 
 	cout<<"Checking options"<<endl;
 
@@ -66,13 +67,15 @@ void elProj::removeResult(){
 
 	for(int i = 0; i < setConstits.size(); i++){
 
+		unique_ptr<constituencyFPTP> FPTPconstit (dynamic_cast<constituencyFPTP*> (setConstits[i].second.release()));
+
 		string holdGain;
-		if(setConstits[i].second.isHeld())
+		if(FPTPconstit->isHeld())
 			holdGain = " HOLD";
 		else 
 			holdGain = " GAIN";
 
-		cout<<"("<<i<<") "<<setConstits[i].first.getName()<<" ("<<setConstits[i].second.getParty()<<holdGain<<")"<<endl;
+		cout<<"("<<i<<") "<<setConstits[i].first->getName()<<" ("<<FPTPconstit->getParty()<<holdGain<<")"<<endl;
 
 	}
 
@@ -112,7 +115,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 	//oragnise constits by area
 
 	map<int,map<string,double>> swingMap;
-	map<int,vector<pair<constituency,constituency>>> constitsByArea;
+	map<int,vector<pair<unique_ptr<constituencyBase>,unique_ptr<constituencyBase>>>> constitsByArea;
 	map<int,double> totalVotesArea;
 	map<string,double> totalSwing;
 	map<int,map<string,double>> randomMap;
@@ -121,16 +124,16 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 	normal_distribution<double> dist(0,0.03);
 
 	//init total votes in each area to 0
-	for(auto constit : initialEl.getConstitVec()){
+	for(auto& constit : initialEl.getConstitVec()){
 		totalVotesArea[constit.getArea()] = 0;
 	}
 
 	//iterate over set constits
 	//sort set constits by area and add to total votes by area and total votes
-	for(auto constitPair : setConstits){
-		constitsByArea[constitPair.first.getArea()].push_back(constitPair);
-		totalVotesArea[constitPair.first.getArea()] += constitPair.second.getVotesCast();
-		totalVotes += constitPair.second.getVotesCast();
+	for(auto& constitPair : setConstits){
+		constitsByArea[constitPair.first->getArea()].push_back(std::move(constitPair));
+		totalVotesArea[constitPair.first->getArea()] += constitPair.second->getVotesCast();
+		totalVotes += constitPair.second->getVotesCast();
 	}
 
 	//iterate over set constits by area
@@ -141,9 +144,9 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 
 		map<string,double> areaSwing;
 
-		for(auto constitPair : AreaConsitVec.second){
+		for(auto& constitPair : AreaConsitVec.second){
 
-			map<string,double> constitSwing = constitPair.second.getSwings(constitPair.first);
+			map<string,double> constitSwing = constitPair.second->getSwings(*constitPair.first);
 
 			for(auto partySwing = constitSwing.begin(); partySwing != constitSwing.end(); partySwing++){
 
@@ -156,8 +159,8 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 					totalSwing[partySwing->first] = 0;					
 				}
 
-				areaSwing[partySwing->first] += partySwing->second*constitPair.second.getVotesCast();
-				totalSwing[partySwing->first]+= partySwing->second*constitPair.second.getVotesCast();
+				areaSwing[partySwing->first] += partySwing->second*constitPair.second->getVotesCast();
+				totalSwing[partySwing->first]+= partySwing->second*constitPair.second->getVotesCast();
 
 			}
 
@@ -278,18 +281,21 @@ void elProj::print(int choice){
 }
 void elProj::printDeclared(){
 
-	for(auto constitPair : setConstits){
+	for(auto& constitPair : setConstits){
+
+		unique_ptr<constituencyFPTP> FPTPConstit1 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(*constitPair.first).release()));
+		unique_ptr<constituencyFPTP> FPTPConstit2 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(*constitPair.second).release()));
 
 		string holdGain;
 
-		if(constitPair.second.isHeld()){
-			holdGain = " ("+constitPair.second.getParty()+" HOLD)";
+		if(FPTPConstit2->isHeld()){
+			holdGain = " ("+FPTPConstit2->getParty()+" HOLD)";
 		}
 		else{
-			holdGain = " ("+constitPair.second.getParty()+" GAIN from "+constitPair.first.getParty()+")";
+			holdGain = " ("+FPTPConstit2->getParty()+" GAIN from "+FPTPConstit1->getParty()+")";
 		}
 
-		cout<<constitPair.second.getName()<<holdGain<<endl;
+		cout<<FPTPConstit2->getName()<<holdGain<<endl;
 
 	}
 
@@ -300,13 +306,15 @@ void elProj::printProjectedGains(election el){
 		el = projectionList.back();
 	}
 
-	for(constituency constit : el.getConstitVec()){
+	for(auto& constitBase : el.getConstitVec()){
 
 		bool declared = false;
 
-		for(auto constitPair : setConstits){
+		constituencyFPTP constit = dynamic_cast<constituencyFPTP&>(constitBase);
 
-			if(constit.getName() == constitPair.first.getName()){
+		for(auto& constitPair : setConstits){
+
+			if(constit.getName() == constitPair.first->getName()){
 				declared = true;
 				break;
 			}
@@ -316,7 +324,7 @@ void elProj::printProjectedGains(election el){
 
 		if(constit.isHeld()) continue;
 
-		cout<<"Area: "<<constit.getArea()<<", "<<constit.getName()<<" ("<<oldElWDec.getConstit(constit.getName()).getParty()<<" -> "<<constit.getParty()<<")"<<endl;
+		cout<<"Area: "<<constit.getArea()<<", "<<constit.getName()<<" ("<<dynamic_cast<constituencyFPTP*>((oldElWDec.getConstit(constit.getName())).release())->getParty()<<" -> "<<constit.getParty()<<")"<<endl;
 
 	}
 
@@ -374,7 +382,7 @@ void elProj::checkResults(vector<election> elVec){
 	}
 	partyMajorities["hung"] = 0;
 
-	int area = setConstits.back().second.getArea();
+	int area = setConstits.back().second->getArea();
 
 	for(auto el = elVec.begin(); el != elVec.end(); ++el){
 
@@ -549,9 +557,9 @@ void elProj::saveProj(){
 
 	vector<string> parties;
 
-	for(auto constitPair : setConstits){
+	for(auto& constitPair : setConstits){
 
-		for(string party : constitPair.first.partiesContestingSeat()){
+		for(string party : constitPair.first->partiesContestingSeat()){
 
 			//check if we already have this in the vector
 
@@ -587,14 +595,14 @@ void elProj::saveProj(){
 
 	//results
 
-	for(auto constitPair : setConstits){
+	for(auto& constitPair : setConstits){
 
-		outFile<<constitPair.second.getName()<<","<<constitPair.second.getMP()<<","<<constitPair.second.getCountry()<<","<<constitPair.second.getArea()<<","<<constitPair.second.getCounty()<<","<<constitPair.second.getElectorate();
+		outFile<<constitPair.second->getName()<<","<<"MP"<<","<<constitPair.second->getCountry()<<","<<constitPair.second->getArea()<<","<<constitPair.second->getCounty()<<","<<constitPair.second->getElectorate();
 
 		for(string party : parties){
 
-			if(constitPair.second.partyContestsSeat(party)){
-				outFile<<","<<constitPair.second.getVotesCast(party);
+			if(constitPair.second->partyContestsSeat(party)){
+				outFile<<","<<constitPair.second->getVotesCast(party);
 			}
 			else{
 				outFile<<",";
@@ -771,17 +779,17 @@ void elProj::loadProj(bool randomness){
 	setConstits.clear();
 	oldElWDec = initialEl;
 
-	for(constituency constit : tmpEl.getConstitVec()){
+	for(constituencyBase& constit : tmpEl.getConstitVec()){
 
-		constituency prevConstit = oldElWDec.getConstit(constit.getName());
-		constituency newConstit  = tmpEl.getConstit(constit.getName());
+		unique_ptr<constituencyBase> prevConstit = oldElWDec.getConstit(constit.getName());
+		unique_ptr<constituencyBase> newConstit  = tmpEl.getConstit(constit.getName());
 
-		newConstit.setPreventSwing(true);
+		newConstit->setPreventSwing(true);
 
 		election tmpEl2 = oldElWDec;
-		oldElWDec = tmpEl2.addNewResult(newConstit);
+		oldElWDec = tmpEl2.addNewResult(*newConstit);
 
-		setConstits.push_back(pair<constituency,constituency>(prevConstit,newConstit));
+		setConstits.push_back(make_pair(prevConstit,newConstit));
 
 		project(randomness);
 		if(outNameSet and randomness){

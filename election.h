@@ -1,7 +1,7 @@
 #ifndef ELECTION_H
 #define ELECTION_H
 
-#include "constituency.h"
+#include "constituencyBase.h"
 #include "date.h"
 #include <map>
 #include <vector>
@@ -18,7 +18,7 @@ private:
 	//set externally
 	string name = "GE2015";
 	date Date;
-	vector<constituency> constitVec;
+	vector<unique_ptr<constituencyBase>> constitVec;
 	bool isProj_ = false; //true when object is a projection
 
 	//set internally by init()
@@ -31,13 +31,13 @@ private:
 
 public:
 	election(){}
-	election(unique_ptr<vector<constituency>> constits, bool isAProj = false){
+	election(unique_ptr<vector<unique_ptr<constituencyBase>>> constits, bool isAProj = false){
 		constitVec = *constits;
 		init();
 		isProj_ = isAProj;
 		if(isAProj) name = "GE2017proj";
 	}
-	election(date Date_,vector<constituency> constits){
+	election(date Date_,vector<unique_ptr<constituencyBase>> constits){
 		Date = Date_;
 		constitVec = constits;
 		init();
@@ -49,12 +49,12 @@ public:
 		init();
 	}
 
-	election addNewResult(constituency constit);
+	election addNewResult(constituencyBase &constit);
 
-	constituency getConstit(int num);
-	constituency getConstit(const string& name);
+	unique_ptr<constituencyBase> getConstit(int num);
+	unique_ptr<constituencyBase> getConstit(const string& name);
 
-	vector<constituency> getConstitVec() const;
+	vector<constituencyBase> getConstitVec() const;
 	int numConstits();
 	int numConstits(int area);
 

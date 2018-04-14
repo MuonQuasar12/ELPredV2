@@ -1,6 +1,6 @@
 #include <vector>
 #include "election.h"
-#include "constituency.h"
+#include "constituencyBase.h"
 #include <utility>
 #include <map>
 #include <memory>
@@ -13,7 +13,7 @@ class elProj{
 private:
 
 	vector<election> projectionList;
-	vector<pair<constituency,constituency>> setConstits; //first old, second new
+	vector<pair<unique_ptr<constituencyBase>,unique_ptr<constituencyBase>>> setConstits; //first old, second new
 	election oldElWDec; //old election with new constits, no swing applied
 	election initialEl;
 	vector<map<string,int>> majoritiesMap;

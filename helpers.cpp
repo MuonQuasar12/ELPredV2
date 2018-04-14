@@ -1,5 +1,6 @@
 #include "helpers.h"
-#include "constituency.h"
+#include "constituencyBase.h"
+#include "constituencyFPTP.h"
 #include "election.h"
 #include <iostream>
 #include <string>
@@ -22,7 +23,7 @@ namespace elPred{
 
 		string line;
 
-		unique_ptr<vector<constituency>> constitVec(new vector<constituency>());
+		unique_ptr<vector<constituencyBase>> constitVec(new vector<constituencyBase>());
 
 		int line_no = 2;
 		vector<string> partyVec;
@@ -105,7 +106,7 @@ namespace elPred{
 				counter++;
 			}
 
-			constitVec->emplace_back(constituency(name,MP,Country,County,area,electorate,results));
+			constitVec->emplace_back(constituencyFPTP(name,MP,Country,County,area,electorate,results));
 
 			line_no++;
 		}		
@@ -114,15 +115,15 @@ namespace elPred{
 
 	}
 
-	constituency constitSearch(election el){
+	unique_ptr<constituencyBase> constitSearch(election el){
 			
-		vector<constituency> constitVec;
+		vector<constituencyBase> constitVec;
 
 		for(int i = 0 ; i < el.numConstits() ; i++ ){
 			constitVec.push_back(el.getConstit(i));
 		}
 	
-		vector<constituency> slimmedConstitVec;
+		vector<constituencyBase> slimmedConstitVec;
 
 		while(true){
 
@@ -143,7 +144,7 @@ namespace elPred{
 
 				transform(input.begin(), input.end(), input.begin(), ::tolower);
 	
-				for(constituency constit : constitVec){
+				for(constituencyBase& constit : constitVec){
 	
 					string constitName = constit.getName();
 
@@ -199,7 +200,7 @@ namespace elPred{
 					gainHold = " GAIN";
 			}
 
-			cout<<"("<<i<<") "<< slimmedConstitVec[i].getName()<<" ("<<slimmedConstitVec[i].getParty()<<gainHold<<")"<<endl;
+			cout<<"("<<i<<") "<< slimmedConstitVec[i].getName()<<" ("<<((constituencyFPTP) slimmedConstitVec[i]).getParty()<<gainHold<<")"<<endl;
 
 		}
 
@@ -233,7 +234,7 @@ namespace elPred{
 
 		
 
-		return constituency();
+		return constituencyBase();
 
 	}
 
@@ -340,7 +341,7 @@ namespace elPred{
 
 	}
 
-	constituency enterNewResults(constituency constit){
+	unique_ptr<constituencyBase> enterNewResults(constituencyBase& constit){
 
 		while(true){
 
@@ -406,7 +407,7 @@ namespace elPred{
 
 		}
 
-		return constituency();
+		return unique_ptr<constituencyBase> (new constituencyBase());
 
 	}
 

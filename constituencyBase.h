@@ -34,6 +34,7 @@ public:
 	constituencyBase(){
 		name = "null";
 	}
+	virtual ~constituencyBase();
 
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
 
