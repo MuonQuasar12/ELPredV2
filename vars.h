@@ -3,7 +3,7 @@
 
 namespace elPred{
 
-	enum countSys{DHONDT,SLAGUE};
+	enum countSys{DHONDT,STLAGUE};
 
 }
 

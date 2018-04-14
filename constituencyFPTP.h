@@ -16,13 +16,14 @@ class constituencyFPTP: public constituencyBase{
 private:
 	string MP;
 	bool hold = true;
+	double weight = 1;
 
 public:
 
 	static normal_distribution<double> dist;
 
-	constituencyFPTP(string name_, string MP_, string country_, string county_, int area_, int electorate_, map<string,int> votesCast_, bool isHeld = true,bool preventSwing = false):
-	constituencyBase(name_,country_,county_,area_,electorate_,votesCast_,preventSwing)
+	constituencyFPTP(string name_, string MP_, string country_, string county_, int area_, bool isHeld = true, bool preventSwing = false):
+	constituencyBase(name_,country_,county_,area_,preventSwing)
 	{
 		MP = MP_;
 		hold = isHeld;
@@ -38,6 +39,8 @@ public:
 	double getMajorityFrac();
 	bool isHeld(){return hold;}
 	void setHold(bool isAHold){hold = isAHold;}
+	void setWeight(double w){weight = w;}
+	double getWeight(){return weight;}
 
 	virtual void print(int opt = 1) override;
 

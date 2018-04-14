@@ -57,7 +57,7 @@ public:
 	bool preventSwing(){return doNotSwing;}
 	void setPreventSwing(bool opt);
 
-	map<string,double> getSwings(constituencyBase oldResult);
+	map<string,double> getSwings(constituencyBase& oldResult);
 
 	virtual void print(int opt = 1) = 0;
 
