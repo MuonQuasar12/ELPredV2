@@ -95,6 +95,10 @@ void constituencyFPTP::print(int opt){
 
 		cout<<endl;
 	}
+	if(opt == 4)
+		cout<<"Seat: "<<getName()<<" area: "<<getArea()<<" ("<<getParty()<<")"<<" turnout "<<(100*getTurnout())<<"%, "<<partiesContestingSeat().size()<<" parties contesting seat. Majority "<<(getMajorityFrac()*100)<<"% over "<<getSecondPlace()<<endl;
+
+	cout<<"Finished printing"<<endl;
 
 }
 unique_ptr<constituencyBase> constituencyFPTP::clone()const{

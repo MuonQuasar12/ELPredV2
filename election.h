@@ -31,30 +31,35 @@ private:
 	void init();
 
 public:
-	election(){}
+	election(){
+		cout<<"Default constructor"<<endl;
+	}
 	election(unique_ptr<vector<unique_ptr<constituencyBase>>>& constits, bool isAProj = false){
 		
-		cout<<"In el constructor"<<endl;
+		cout<<"Election Constructor A"<<endl;
 
 		constitVec.clear();
 
-		cout<<"Constit vector cleared, iterating over input constits"<<endl;
+		//cout<<"Constit vector cleared, iterating over input constits"<<endl;
 
 		for(auto& constitPtr : *constits){
 
-			cout<<".";
+			//cout<<".";
 			constitVec.push_back(std::move(constitPtr));
 
 		}
 		
-		cout<<endl<<"Intialising el object"<<endl;
+		//cout<<endl<<"Intialising el object"<<endl;
 		init();
-		cout<<"Finished Intialising"<<endl;
+		//cout<<"Finished Intialising"<<endl;
 		isProj_ = isAProj;
 		if(isAProj) name = "GE2017proj";
 		cout<<"Done constructing"<<endl;
 	}
 	election(date Date_,vector<unique_ptr<constituencyBase>> constits){
+		
+		cout<<"Election Contructor B"<<endl;
+
 		Date = Date_;
 			
 		constitVec.clear();
@@ -66,8 +71,13 @@ public:
 		}
 
 		init();
+
+		cout<<"Done constructing"<<endl;
 	}
 	election(const election &el){
+		
+		cout<<"Election copy constructor"<<endl;
+
 		Date = date(el.getDate());
 
 		constitVec.clear();
@@ -80,8 +90,12 @@ public:
 
 		isProj_ = el.isProj_;
 		init();
+
+		cout<<"Done constructing"<<endl;
 	}
 	election& operator=(const election& otherEl){
+
+		cout<<"Election copy assignment"<<endl;
 
 		name = otherEl.name;
 		date Date = otherEl.Date;
@@ -97,6 +111,8 @@ public:
 		isProj_ = otherEl.isProj_;
 
 		init();
+
+		cout<<"Returning copy"<<endl;
 
 		return *this;
 

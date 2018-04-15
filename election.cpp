@@ -38,45 +38,43 @@ void election::init(){
 		seatVec[votepair.first] = 0;
 	}
 
-	cout<<"Empty seat vector created, iterating over constituencies"<<endl;
+	//cout<<"Empty seat vector created, iterating over constituencies"<<endl;
 
-	cout<<"Constit vec has "<<constitVec.size()<<" entries, checking first element"<<endl;
-	constitVec[0]->print();
-	cout<<"Const name = "<<constitVec[0]->getName()<<endl;
+	cout<<"Constit vec has "<<constitVec.size()<<endl;
+	constitVec[0]->print(4);
+	//cout<<"Const name = "<<constitVec[0]->getName()<<endl;
 
 	for(auto& constit : constitVec){
 
-		cout<<constit->getName()<<": ";
+		//cout<<constit->getName()<<": ";
 		electorate += constit->getElectorate();
 
-		cout<<"casting winner";
+		//cout<<"casting winner";
 
 		string winner = (dynamic_cast<constituencyFPTP*> (constit.get()))->getParty();
 		
-		cout<<" Adding 1 to seatvec";
+		//cout<<" Adding 1 to seatvec";
 		seatVec[winner]++;
 
-		cout<<"Totaling votes";
+		//cout<<"Totaling votes";
 		for(string party : constit->partiesContestingSeat()){
 
-			cout<<party<<",";
+			//cout<<party<<",";
 
 			if(totalVotes.count(party)==1){
 				totalVotes[party] += constit->getVotesCast(party);
-				cout<<"(rep)";
+				//cout<<"(rep)";
 			}
 			else{
 				totalVotes[party] = constit->getVotesCast(party);
-				cout<<"(new)"<<endl;
+				//cout<<"(new)"<<endl;
 			}
 
 		}
 
-		cout<<endl;
-
 	}
 
-	cout<<"Finished iterating"<<endl;
+	cout<<"Finished election::init"<<endl;
 }
 
 unique_ptr<constituencyBase> election::getConstit(int num){

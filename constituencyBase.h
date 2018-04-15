@@ -43,7 +43,7 @@ public:
 		doNotSwing = con.doNotSwing;
 
 		parties = con.parties;
-		//votingAreas = con.votingAreas;
+		votingAreas = con.votingAreas;
 
 	}
 

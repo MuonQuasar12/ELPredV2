@@ -30,9 +30,18 @@ private:
 public:
 
 	elProj(election initEl){
+
+		cout<<"elProj contructor"<<endl;
+
+		initEl.getConstit(0)->print(4);
+
+		cout<<"moving on"<<endl;
+
 		projectionList.push_back(initEl);
 		oldElWDec = initEl;
 		initialEl = initEl;
+
+		cout<<"elProj contructor end"<<endl;
 	}
 
 	election getLatest();
