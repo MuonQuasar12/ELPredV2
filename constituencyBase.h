@@ -34,7 +34,6 @@ public:
 	constituencyBase(){
 		name = "null";
 	}
-	virtual ~constituencyBase();
 
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
 
@@ -45,7 +44,7 @@ public:
 	int getElectorate();
 
 	void addVoteArea(string nameArea, int electorateArea, map<string,int> votesCast_);
-	votingArea getVoteArea(string nameArea);
+	unique_ptr<votingArea> getVoteArea(string nameArea);
 	
 	int getVotesCast(const string& party);
 	int getVotesCast();
@@ -57,8 +56,9 @@ public:
 	vector<string> partiesContestingSeat(){return parties;}
 	bool preventSwing(){return doNotSwing;}
 	void setPreventSwing(bool opt);
+	virtual int getNumSeats(string party) = 0;
 
-	map<string,double> getSwings(constituencyBase& oldResult);
+	map<string,double> getSwings(unique_ptr<constituencyBase> oldResult);
 
 	virtual void print(int opt = 1) = 0;
 

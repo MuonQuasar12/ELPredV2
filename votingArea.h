@@ -34,7 +34,7 @@ public:
 	}
 
 	void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
-
+	void setVals(map<string,int> newVotes){votesCast = newVotes;}
 	int getElectorate(){return electorate;}
 	string getName(){return name;}
 	int getVotesCast(const string& party){return votesCast[party];}

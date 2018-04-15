@@ -60,6 +60,13 @@ double constituencyFPTP::getMajorityFrac(){
 	return majority/totalVotes;
 
 }
+int constituencyFPTP::getNumSeats(string party){
+
+	if(party == getParty()) return 1;
+	else return 0;
+
+}
+
 void constituencyFPTP::print(int opt){
 
 	if(opt == 1)

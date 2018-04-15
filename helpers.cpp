@@ -23,7 +23,7 @@ namespace elPred{
 
 		string line;
 
-		unique_ptr<vector<constituencyBase>> constitVec(new vector<constituencyBase>());
+		unique_ptr<vector<unique_ptr<constituencyBase>>> constitVec(new vector<unique_ptr<constituencyBase>>());
 
 		int line_no = 2;
 		vector<string> partyVec;
@@ -106,7 +106,8 @@ namespace elPred{
 				counter++;
 			}
 
-			constitVec->emplace_back(constituencyFPTP(name,MP,Country,County,area,electorate,results));
+			constitVec->emplace_back(unique_ptr<constituencyBase>(new constituencyFPTP(name,MP,Country,County,area)));
+			constitVec->back()->addVoteArea("",electorate,results);
 
 			line_no++;
 		}		
@@ -117,13 +118,13 @@ namespace elPred{
 
 	unique_ptr<constituencyBase> constitSearch(election el){
 			
-		vector<constituencyBase> constitVec;
+		vector<unique_ptr<constituencyBase>> constitVec;
 
 		for(int i = 0 ; i < el.numConstits() ; i++ ){
-			constitVec.push_back(el.getConstit(i));
+			constitVec.push_back(std::move(el.getConstit(i)));
 		}
 	
-		vector<constituencyBase> slimmedConstitVec;
+		vector<unique_ptr<constituencyBase>> slimmedConstitVec;
 
 		while(true){
 
@@ -137,21 +138,26 @@ namespace elPred{
 
 			if(input == "ALL"){
 			
-				slimmedConstitVec = constitVec;
+				slimmedConstitVec.clear();
+				for(auto& constit : constitVec){
+
+					slimmedConstitVec.push_back(std::move(constit));
+
+				}
 
 			}
 			else{
 
 				transform(input.begin(), input.end(), input.begin(), ::tolower);
 	
-				for(constituencyBase& constit : constitVec){
+				for(auto& constit : constitVec){
 	
-					string constitName = constit.getName();
+					string constitName = constit->getName();
 
 					transform(constitName.begin(), constitName.end(), constitName.begin(), ::tolower);
 
 					if (constitName.find(input) != std::string::npos) {
-    					slimmedConstitVec.push_back(constit);
+    					slimmedConstitVec.push_back(std::move(constit));
 					}
 	
 				}
@@ -193,14 +199,14 @@ namespace elPred{
 		for(int i = 0; i<slimmedConstitVec.size(); i++){
 
 			string gainHold;
-			if(slimmedConstitVec[i].preventSwing()){
-				if(slimmedConstitVec[i].isHeld())
+			if(slimmedConstitVec[i]->preventSwing()){
+				if((dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].release()))->isHeld())
 					gainHold = " HOLD";
 				else
 					gainHold = " GAIN";
 			}
 
-			cout<<"("<<i<<") "<< slimmedConstitVec[i].getName()<<" ("<<((constituencyFPTP) slimmedConstitVec[i]).getParty()<<gainHold<<")"<<endl;
+			cout<<"("<<i<<") "<< slimmedConstitVec[i]->getName()<<" ("<<(dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].release()))->getParty()<<gainHold<<")"<<endl;
 
 		}
 
@@ -223,7 +229,7 @@ namespace elPred{
 
 				else
 				{
-					return slimmedConstitVec[tmpVal];
+					return std::move(slimmedConstitVec[tmpVal]);
 				}
 				continue;
 			}
@@ -234,7 +240,7 @@ namespace elPred{
 
 		
 
-		return constituencyBase();
+		return unique_ptr<constituencyBase>();
 
 	}
 
@@ -341,15 +347,15 @@ namespace elPred{
 
 	}
 
-	unique_ptr<constituencyBase> enterNewResults(constituencyBase& constit){
+	unique_ptr<constituencyBase> enterNewResults(unique_ptr<constituencyBase> constit){
 
 		while(true){
 
-			cout<<"Enter new results for "<<constit.getName()<<endl;
+			cout<<"Enter new results for "<<constit->getName()<<endl;
 
 			map<string,int> newRes;
 
-			for(string party : constit.partiesContestingSeat()){
+			for(string party : constit->partiesContestingSeat()){
 
 				int numVotes;
 
@@ -392,9 +398,16 @@ namespace elPred{
 				string input;
 				getline(cin,input);
 
-				if(input == "Y")
-					return constituency(constit.getName(),constit.getMP(),constit.getCountry(),constit.getCounty(),constit.getArea(),constit.getElectorate(),newRes,constit.getParty()==winner.first,true);
+				if(input == "Y"){
 
+					unique_ptr<constituencyFPTP> outConstit (dynamic_cast<constituencyFPTP*>(constit.release()));
+					string originalWinner = outConstit->getParty();
+					outConstit->getVoteArea("")->setVals(newRes);
+					outConstit->setPreventSwing(true);
+					outConstit->setHold(originalWinner==winner.first);
+
+					return outConstit;
+				}
 				else if(input == "N")
 					break;
 
@@ -407,7 +420,7 @@ namespace elPred{
 
 		}
 
-		return unique_ptr<constituencyBase> (new constituencyBase());
+		return unique_ptr<constituencyBase> (new constituencyFPTP());
 
 	}
 

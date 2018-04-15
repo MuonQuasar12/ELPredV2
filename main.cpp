@@ -34,18 +34,6 @@ void newResultsTest2(){
 
 
 }
-void newResultsTest(){
-
-	election GE2015 = elPred::loadfile("results2015.csv");
-
-	constituency constit = elPred::constitSearch(GE2015);
-
-	constituency newConstit = elPred::enterNewResults(constit);	
-
-	constit.print(3);
-	newConstit.print(3);
-
-}
 
 void regswingtest(){
 

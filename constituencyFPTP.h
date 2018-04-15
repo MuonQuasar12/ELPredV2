@@ -28,6 +28,9 @@ public:
 		MP = MP_;
 		hold = isHeld;
 	}
+	constituencyFPTP(){
+		name = "null";
+	}
 
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false) override;
 
@@ -41,6 +44,7 @@ public:
 	void setHold(bool isAHold){hold = isAHold;}
 	void setWeight(double w){weight = w;}
 	double getWeight(){return weight;}
+	virtual int getNumSeats(string party) override;
 
 	virtual void print(int opt = 1) override;
 

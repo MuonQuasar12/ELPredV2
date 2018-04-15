@@ -1,5 +1,6 @@
 #include <string>
 #include "constituencyBase.h"
+#include "constituencyFPTP.h"
 #include "election.h"
 #include <iostream>
 #include <map>
@@ -10,18 +11,18 @@
 
 using namespace std;
 
-election election::addNewResult(constituencyBase &newConstit){
+election election::addNewResult(unique_ptr<constituencyBase> newConstit){
 
-	unique_ptr<vector<constituencyBase>> newConstVec(new vector<constituencyBase>());
+	unique_ptr<vector<unique_ptr<constituencyBase>>> newConstVec(new vector<unique_ptr<constituencyBase>>());
 
-	for(auto constit : constitVec){
+	for(auto& constit : constitVec){
 
-		if(constit.getName() == newConstit.getName()){
-			newConstVec->push_back(newConstit);
+		if(constit->getName() == newConstit->getName()){
+			newConstVec->push_back(std::move(newConstit));
 			//cout<<"Adding the new one"<<endl;
 		}
 		else
-			newConstVec->push_back(constit);
+			newConstVec->push_back(std::move(constit));
 
 	}
 
@@ -37,19 +38,19 @@ void election::init(){
 
 	for(auto& constit : constitVec){
 
-		electorate += constit.getElectorate();
+		electorate += constit->getElectorate();
 
-		string winner = constit.getParty();
+		string winner = (dynamic_cast<constituencyFPTP*> (constit.release()))->getParty();
 		
 		seatVec[winner]++;
 
-		for(string party : constit.partiesContestingSeat()){
+		for(string party : constit->partiesContestingSeat()){
 
 			if(totalVotes.count(party)==1){
-				totalVotes[party] += constit.getVotesCast(party);
+				totalVotes[party] += constit->getVotesCast(party);
 			}
 			else{
-				totalVotes[party] = constit.getVotesCast(party);
+				totalVotes[party] = constit->getVotesCast(party);
 			}
 
 		}
@@ -58,14 +59,14 @@ void election::init(){
 }
 
 unique_ptr<constituencyBase> election::getConstit(int num){
-	return constitVec[num];
+	return std::move(constitVec[num]);
 }
 
 unique_ptr<constituencyBase> election::getConstit(const string& name){
 
 	for(auto& constit : constitVec){
 
-		if(constit.getName() == name) return constit;
+		if(constit->getName() == name) return std::move(constit);
 
 	}
 
@@ -74,7 +75,7 @@ unique_ptr<constituencyBase> election::getConstit(const string& name){
 
 }
 
-vector<constituencyBase> election::getConstitVec()const{
+vector<unique_ptr<constituencyBase>> const& election::getConstitVec() const{
 	return constitVec;
 }
 
@@ -87,7 +88,7 @@ int election::numConstits(int area){
 
 	for(auto& constit : constitVec){
 
-		if(constit.getArea() == area) count++;
+		if(constit->getArea() == area) count++;
 
 	}
 
@@ -97,7 +98,7 @@ int election::numConstits(int area){
 
 election election::swing(unique_ptr<map<int,map<string,double>>> swingVals, bool randomness){
 
-	unique_ptr<vector<constituencyBase>> newConstVec(new vector<constituencyBase>());
+	unique_ptr<vector<unique_ptr<constituencyBase>>> newConstVec(new vector<unique_ptr<constituencyBase>>());
 
 	//iterate over areas
 	for(auto it = swingVals->begin(); it != swingVals->end(); it++){
@@ -120,11 +121,11 @@ election election::swing(unique_ptr<map<int,map<string,double>>> swingVals, bool
 
 	for(auto& constit : constitVec){
 		
-		unique_ptr<map<string,double>> swingArea(new map<string,double>(swingVals->at(constit.getArea())));
+		unique_ptr<map<string,double>> swingArea(new map<string,double>(swingVals->at(constit->getArea())));
 
-		constit.swing(std::move(swingArea),randomness);
+		constit->swing(std::move(swingArea),randomness);
 		
-		newConstVec->push_back(constit);
+		newConstVec->push_back(std::move(constit));
 
 	}
 
@@ -153,8 +154,8 @@ int election::getVotes(int area){
 
 	for(auto& constit : constitVec){
 
-		if(constit.getArea() == area)
-			total += constit.getVotesCast();
+		if(constit->getArea() == area)
+			total += constit->getVotesCast();
 
 	}
 
@@ -167,8 +168,8 @@ int election::getVotes(int area, string party){
 
 	for(auto& constit : constitVec){
 
-		if(constit.getArea() == area)
-			total += constit.getVotesCast(party);
+		if(constit->getArea() == area)
+			total += constit->getVotesCast(party);
 
 	}
 
@@ -190,9 +191,9 @@ int election::getSeats(string party){
 int election::getSeats(const string& party, int area){
 	int seats = 0;
 
-	for(constituency constit : constitVec){
-		if(constit.getArea() == area and constit.getParty()==party){
-			++seats;
+	for(auto& constit : constitVec){
+		if(constit->getArea() == area){
+			seats += constit->getNumSeats(party);
 		}
 	}
 
@@ -205,9 +206,9 @@ vector<string> election::getParties(int area){
 	for(auto partyPair : totalVotes){
 
 		if(area != 0)
-			for(constituency constit : constitVec){
+			for(auto& constit : constitVec){
 
-				if(constit.partyContestsSeat(partyPair.first) and area == constit.getArea()){
+				if(constit->partyContestsSeat(partyPair.first) and area == constit->getArea()){
 					parties.push_back(partyPair.first);
 					break;
 				}

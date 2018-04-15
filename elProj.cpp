@@ -22,31 +22,31 @@ election elProj::getLatest(){
 
 void elProj::addNewResult(){
 
-	unique_ptr<constituencyBase> constit = elPred::constitSearch(oldElWDec);
+	unique_ptr<constituencyBase> constit = std::move(elPred::constitSearch(oldElWDec));
 
 	if(constit->getName() == "null") return;
 
-	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(*constit).release()));
+	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constit)).release()));
 
 	if(newConstit->getParty()== "null") return;
 
-	election tmpEl = oldElWDec;
+	election tmpEl = std::move(oldElWDec);
 
-	oldElWDec = tmpEl.addNewResult(*newConstit);
+	oldElWDec = std::move(tmpEl.addNewResult(std::move(newConstit)));
 
 	//check if result has already been added
 	for(int i =0; i<setConstits.size(); i++){
 
 		if(setConstits[i].first->getName() == newConstit->getName()){
 
-			setConstits[i] = make_pair(constit,newConstit);
+			setConstits[i] = make_pair(std::move(constit),std::move(newConstit));
 
 			return;
 		}
 
 	}	
 
-	setConstits.push_back(make_pair(constit,newConstit));
+	setConstits.push_back(make_pair(std::move(constit),std::move(newConstit)));
 
 	cout<<"Checking options"<<endl;
 
@@ -125,7 +125,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 
 	//init total votes in each area to 0
 	for(auto& constit : initialEl.getConstitVec()){
-		totalVotesArea[constit.getArea()] = 0;
+		totalVotesArea[constit->getArea()] = 0;
 	}
 
 	//iterate over set constits
@@ -137,7 +137,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 	}
 
 	//iterate over set constits by area
-	for(auto AreaConsitVec : constitsByArea){
+	for(auto& AreaConsitVec : constitsByArea){
 
 		//if(randomness)
 		//	cout<<"Area "<<AreaConsitVec.first<<" has entries"<<endl;
@@ -146,7 +146,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 
 		for(auto& constitPair : AreaConsitVec.second){
 
-			map<string,double> constitSwing = constitPair.second->getSwings(*constitPair.first);
+			map<string,double> constitSwing = constitPair.second->getSwings(std::move(constitPair.first));
 
 			for(auto partySwing = constitSwing.begin(); partySwing != constitSwing.end(); partySwing++){
 
@@ -283,8 +283,8 @@ void elProj::printDeclared(){
 
 	for(auto& constitPair : setConstits){
 
-		unique_ptr<constituencyFPTP> FPTPConstit1 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(*constitPair.first).release()));
-		unique_ptr<constituencyFPTP> FPTPConstit2 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(*constitPair.second).release()));
+		unique_ptr<constituencyFPTP> FPTPConstit1 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.first)).release()));
+		unique_ptr<constituencyFPTP> FPTPConstit2 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.second)).release()));
 
 		string holdGain;
 
@@ -310,7 +310,7 @@ void elProj::printProjectedGains(election el){
 
 		bool declared = false;
 
-		constituencyFPTP constit = dynamic_cast<constituencyFPTP&>(constitBase);
+		constituencyFPTP constit = dynamic_cast<constituencyFPTP&>(*constitBase);
 
 		for(auto& constitPair : setConstits){
 
@@ -779,17 +779,17 @@ void elProj::loadProj(bool randomness){
 	setConstits.clear();
 	oldElWDec = initialEl;
 
-	for(constituencyBase& constit : tmpEl.getConstitVec()){
+	for(auto& constit : tmpEl.getConstitVec()){
 
-		unique_ptr<constituencyBase> prevConstit = oldElWDec.getConstit(constit.getName());
-		unique_ptr<constituencyBase> newConstit  = tmpEl.getConstit(constit.getName());
+		unique_ptr<constituencyBase> prevConstit = oldElWDec.getConstit(constit->getName());
+		unique_ptr<constituencyBase> newConstit  = tmpEl.getConstit(constit->getName());
 
 		newConstit->setPreventSwing(true);
 
 		election tmpEl2 = oldElWDec;
-		oldElWDec = tmpEl2.addNewResult(*newConstit);
+		oldElWDec = tmpEl2.addNewResult(std::move(newConstit));
 
-		setConstits.push_back(make_pair(prevConstit,newConstit));
+		setConstits.push_back(make_pair(std::move(prevConstit),std::move(newConstit)));
 
 		project(randomness);
 		if(outNameSet and randomness){

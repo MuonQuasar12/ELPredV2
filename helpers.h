@@ -17,7 +17,7 @@ namespace elPred{
 
 	unique_ptr<constituencyBase> constitSearch(election el);
 
-	unique_ptr<constituencyBase> enterNewResults(constituencyBase& constit);
+	unique_ptr<constituencyBase> enterNewResults(unique_ptr<constituencyBase> constit);
 
 	map<int,map<string,double>> generateSwingMap(map<vector<int>,map<string,double>> rawSwings, election el);
 

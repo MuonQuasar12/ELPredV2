@@ -48,16 +48,16 @@ void constituencyBase::addVoteArea(string nameArea, int electorateArea, map<stri
 	}
 
 }
-votingArea constituencyBase::getVoteArea(string nameArea){
+unique_ptr<votingArea> constituencyBase::getVoteArea(string nameArea){
 
 	for(auto areaPair : votingAreas){
 
 		if(areaPair.first == nameArea)
-			return areaPair.second;
+			return unique_ptr<votingArea>(new votingArea(areaPair.second));
 
 	}
 
-	return votingArea();
+	return unique_ptr<votingArea>();
 
 }
 int constituencyBase::getVotesCast(const string& party){
@@ -146,4 +146,20 @@ void constituencyBase::setPreventSwing(bool opt){
 		areaPair.second.setPreventSwing(opt);
 
 	}
+}
+map<string,double> constituencyBase::getSwings(unique_ptr<constituencyBase> oldResult){
+
+	map<string,double> swings;
+
+	map<string,double> newVoteShares = getVoteShareMap();
+	map<string,double> oldVoteShares = oldResult->getVoteShareMap();
+
+	for(auto partyVotes : newVoteShares){
+
+		swings[partyVotes.first] = partyVotes.second - oldVoteShares[partyVotes.first];
+
+	}
+
+	return swings;
+
 }

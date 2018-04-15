@@ -39,7 +39,7 @@ public:
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false) override;
 
 	virtual map<string,int> getSeats(map<string,int> seatPreMap = null_map());
-	virtual int getNumSeats(string party){return seatsMap[party];}
+	virtual int getNumSeats(string party) override {return seatsMap[party];}
 
 	virtual void print(int opt = 1) override;
 
