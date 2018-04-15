@@ -111,3 +111,8 @@ void constituencyPR::print(int opt){
 		
 	}
 }
+unique_ptr<constituencyBase> constituencyPR::clone()const{
+
+	return unique_ptr<constituencyBase>(new constituencyPR(*this));
+
+}

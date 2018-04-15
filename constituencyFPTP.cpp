@@ -97,3 +97,8 @@ void constituencyFPTP::print(int opt){
 	}
 
 }
+unique_ptr<constituencyBase> constituencyFPTP::clone()const{
+
+	return unique_ptr<constituencyBase>(new constituencyFPTP(*this));
+
+}

@@ -23,6 +23,8 @@ namespace elPred{
 
 		string line;
 
+		cout<<"Creating constitVec pointer"<<endl;
+
 		unique_ptr<vector<unique_ptr<constituencyBase>>> constitVec(new vector<unique_ptr<constituencyBase>>());
 
 		int line_no = 2;
@@ -43,6 +45,8 @@ namespace elPred{
 			partyVec.push_back(tmpstr);
 		}
 		cout<<endl;
+
+		cout<<"Opening file"<<endl;
 
 		while (getline(inputFile, line)) {
 
@@ -112,7 +116,9 @@ namespace elPred{
 			line_no++;
 		}		
 
-		return election(std::move(constitVec));
+		cout<<"returning election object"<<endl;
+
+		return election(constitVec);
 
 	}
 
@@ -200,13 +206,13 @@ namespace elPred{
 
 			string gainHold;
 			if(slimmedConstitVec[i]->preventSwing()){
-				if((dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].release()))->isHeld())
+				if((dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].get()))->isHeld())
 					gainHold = " HOLD";
 				else
 					gainHold = " GAIN";
 			}
 
-			cout<<"("<<i<<") "<< slimmedConstitVec[i]->getName()<<" ("<<(dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].release()))->getParty()<<gainHold<<")"<<endl;
+			cout<<"("<<i<<") "<< slimmedConstitVec[i]->getName()<<" ("<<(dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].get()))->getParty()<<gainHold<<")"<<endl;
 
 		}
 
@@ -400,7 +406,7 @@ namespace elPred{
 
 				if(input == "Y"){
 
-					unique_ptr<constituencyFPTP> outConstit (dynamic_cast<constituencyFPTP*>(constit.release()));
+					unique_ptr<constituencyFPTP> outConstit (dynamic_cast<constituencyFPTP*>(constit.get()));
 					string originalWinner = outConstit->getParty();
 					outConstit->getVoteArea("")->setVals(newRes);
 					outConstit->setPreventSwing(true);

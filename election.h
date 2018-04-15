@@ -8,6 +8,7 @@
 #include <string>
 #include <random>
 #include <memory>
+#include <iostream>
 
 using namespace std;
 
@@ -31,21 +32,27 @@ private:
 
 public:
 	election(){}
-	election(unique_ptr<vector<unique_ptr<constituencyBase>>> constits, bool isAProj = false){
+	election(unique_ptr<vector<unique_ptr<constituencyBase>>>& constits, bool isAProj = false){
 		
+		cout<<"In el constructor"<<endl;
+
 		constitVec.clear();
+
+		cout<<"Constit vector cleared, iterating over input constits"<<endl;
 
 		for(auto& constitPtr : *constits){
 
-			//unique_ptr<constituencyBase> constitPtr2(std::mo)
-
-			//constitVec.push_back(std::move(constitPtr));
+			cout<<".";
+			constitVec.push_back(std::move(constitPtr));
 
 		}
 		
+		cout<<endl<<"Intialising el object"<<endl;
 		init();
+		cout<<"Finished Intialising"<<endl;
 		isProj_ = isAProj;
 		if(isAProj) name = "GE2017proj";
+		cout<<"Done constructing"<<endl;
 	}
 	election(date Date_,vector<unique_ptr<constituencyBase>> constits){
 		Date = Date_;
@@ -54,7 +61,7 @@ public:
 
 		for(auto& constit : constits){
 
-			//constitVec.push_back(std::move(constit));
+			constitVec.push_back(std::move(constit));
 
 		}
 
@@ -67,7 +74,7 @@ public:
 
 		for(auto& constit : el.constitVec){
 
-			//constitVec.push_back(std::move(constit));
+			constitVec.push_back(constit->clone());
 
 		}
 
@@ -83,7 +90,7 @@ public:
 
 		for(auto& constit : otherEl.constitVec){
 
-			//constitVec.push_back(std::move(constit));
+			constitVec.push_back(constit->clone());
 
 		}
 

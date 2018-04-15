@@ -26,36 +26,57 @@ election election::addNewResult(unique_ptr<constituencyBase> newConstit){
 
 	}
 
-	return election(std::move(newConstVec));
+	return election(newConstVec);
 
 }
 
 void election::init(){
 
+	cout<<"Beginning election::init"<<endl;
+
 	for(auto votepair : totalVotes){
 		seatVec[votepair.first] = 0;
 	}
 
+	cout<<"Empty seat vector created, iterating over constituencies"<<endl;
+
+	cout<<"Constit vec has "<<constitVec.size()<<" entries, checking first element"<<endl;
+	constitVec[0]->print();
+	cout<<"Const name = "<<constitVec[0]->getName()<<endl;
+
 	for(auto& constit : constitVec){
 
+		cout<<constit->getName()<<": ";
 		electorate += constit->getElectorate();
 
-		string winner = (dynamic_cast<constituencyFPTP*> (constit.release()))->getParty();
+		cout<<"casting winner";
+
+		string winner = (dynamic_cast<constituencyFPTP*> (constit.get()))->getParty();
 		
+		cout<<" Adding 1 to seatvec";
 		seatVec[winner]++;
 
+		cout<<"Totaling votes";
 		for(string party : constit->partiesContestingSeat()){
+
+			cout<<party<<",";
 
 			if(totalVotes.count(party)==1){
 				totalVotes[party] += constit->getVotesCast(party);
+				cout<<"(rep)";
 			}
 			else{
 				totalVotes[party] = constit->getVotesCast(party);
+				cout<<"(new)"<<endl;
 			}
 
 		}
 
+		cout<<endl;
+
 	}
+
+	cout<<"Finished iterating"<<endl;
 }
 
 unique_ptr<constituencyBase> election::getConstit(int num){
@@ -129,7 +150,7 @@ election election::swing(unique_ptr<map<int,map<string,double>>> swingVals, bool
 
 	}
 
-	return election(std::move(newConstVec),true);
+	return election(newConstVec,true);
 
 }
 

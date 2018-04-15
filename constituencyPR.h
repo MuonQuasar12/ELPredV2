@@ -43,6 +43,8 @@ public:
 
 	virtual void print(int opt = 1) override;
 
+	virtual unique_ptr<constituencyBase> clone() const override;
+
 };
 
 #endif

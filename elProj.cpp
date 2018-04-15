@@ -26,7 +26,7 @@ void elProj::addNewResult(){
 
 	if(constit->getName() == "null") return;
 
-	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constit)).release()));
+	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constit)).get()));
 
 	if(newConstit->getParty()== "null") return;
 
@@ -67,7 +67,7 @@ void elProj::removeResult(){
 
 	for(int i = 0; i < setConstits.size(); i++){
 
-		unique_ptr<constituencyFPTP> FPTPconstit (dynamic_cast<constituencyFPTP*> (setConstits[i].second.release()));
+		unique_ptr<constituencyFPTP> FPTPconstit (dynamic_cast<constituencyFPTP*> (setConstits[i].second.get()));
 
 		string holdGain;
 		if(FPTPconstit->isHeld())
@@ -283,8 +283,8 @@ void elProj::printDeclared(){
 
 	for(auto& constitPair : setConstits){
 
-		unique_ptr<constituencyFPTP> FPTPConstit1 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.first)).release()));
-		unique_ptr<constituencyFPTP> FPTPConstit2 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.second)).release()));
+		unique_ptr<constituencyFPTP> FPTPConstit1 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.first)).get()));
+		unique_ptr<constituencyFPTP> FPTPConstit2 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.second)).get()));
 
 		string holdGain;
 
@@ -324,7 +324,7 @@ void elProj::printProjectedGains(election el){
 
 		if(constit.isHeld()) continue;
 
-		cout<<"Area: "<<constit.getArea()<<", "<<constit.getName()<<" ("<<dynamic_cast<constituencyFPTP*>((oldElWDec.getConstit(constit.getName())).release())->getParty()<<" -> "<<constit.getParty()<<")"<<endl;
+		cout<<"Area: "<<constit.getArea()<<", "<<constit.getName()<<" ("<<dynamic_cast<constituencyFPTP*>((oldElWDec.getConstit(constit.getName())).get())->getParty()<<" -> "<<constit.getParty()<<")"<<endl;
 
 	}
 

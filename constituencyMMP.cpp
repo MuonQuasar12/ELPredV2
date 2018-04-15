@@ -106,3 +106,8 @@ void constituencyMMP::print(int opt){
 		cout<<endl;
 	}
 }
+unique_ptr<constituencyBase> constituencyMMP::clone()const{
+
+	return unique_ptr<constituencyBase>(new constituencyMMP(*this));
+
+}

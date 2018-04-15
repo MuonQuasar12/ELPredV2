@@ -34,6 +34,18 @@ public:
 	constituencyBase(){
 		name = "null";
 	}
+	constituencyBase(const constituencyBase& con){
+
+		name = con.name;
+		country = con.name;
+		county = con.name;
+		area = con.area;
+		doNotSwing = con.doNotSwing;
+
+		parties = con.parties;
+		//votingAreas = con.votingAreas;
+
+	}
 
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
 
@@ -61,6 +73,8 @@ public:
 	map<string,double> getSwings(unique_ptr<constituencyBase> oldResult);
 
 	virtual void print(int opt = 1) = 0;
+
+	virtual unique_ptr<constituencyBase> clone() const = 0;
 
 };
 

@@ -27,9 +27,13 @@ int main(){
 }
 void newResultsTest2(){
 
+	cout<<"Loading file"<<endl;
 	election GE2015 = elPred::loadfile("results2015b.csv");
 
+	cout<<"File loaded, creating projection object"<<endl;
 	elProj testProj(GE2015);
+
+	cout<<"Running projection"<<endl;
 	testProj.run();
 
 
