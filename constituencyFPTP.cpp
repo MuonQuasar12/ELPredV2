@@ -8,6 +8,7 @@
 #include <chrono>
 #include <memory>
 #include "constituencyBase.h"
+#include <ciso646>
 
 using namespace std;
 

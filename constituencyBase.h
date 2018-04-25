@@ -8,6 +8,7 @@
 #include <memory>
 #include <random>
 #include "votingArea.h"
+#include <iostream>
 
 using namespace std;
 
@@ -25,6 +26,9 @@ protected:
 public:
 
 	constituencyBase(string name_, string country_, string county_, int area_, bool preventSwing = false){
+		
+		//cout<<"constituencyBase::Parameterised Constructor"<<endl;
+
 		name = name_;
 		country = country_;
 		county = county_;
@@ -32,18 +36,30 @@ public:
 		doNotSwing = preventSwing;
 	}
 	constituencyBase(){
+
+		//cout<<"constituencyBase::default Constructor"<<endl;
+
 		name = "null";
 	}
 	constituencyBase(const constituencyBase& con){
 
+		//cout<<"constituencyBase::copy Constructor"<<endl;
+
 		name = con.name;
-		country = con.name;
-		county = con.name;
+		country = con.country;
+		county = con.county;
 		area = con.area;
 		doNotSwing = con.doNotSwing;
 
 		parties = con.parties;
-		votingAreas = con.votingAreas;
+
+		votingAreas.clear();
+
+		for(auto& vt : con.votingAreas){
+
+			votingAreas[vt.first] = votingArea(vt.second);
+
+		}
 
 	}
 
@@ -56,7 +72,7 @@ public:
 	int getElectorate();
 
 	void addVoteArea(string nameArea, int electorateArea, map<string,int> votesCast_);
-	unique_ptr<votingArea> getVoteArea(string nameArea);
+	votingArea& getVoteArea(string nameArea);
 	
 	int getVotesCast(const string& party);
 	int getVotesCast();
@@ -67,7 +83,7 @@ public:
 	bool partyContestsSeat(const string& party);
 	vector<string> partiesContestingSeat(){return parties;}
 	bool preventSwing(){return doNotSwing;}
-	void setPreventSwing(bool opt);
+	virtual void setPreventSwing(bool opt);
 	virtual int getNumSeats(string party) = 0;
 
 	map<string,double> getSwings(unique_ptr<constituencyBase> oldResult);

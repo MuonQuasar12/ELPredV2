@@ -1,10 +1,10 @@
 #include <memory>
 #include <random>
 #include "votingArea.h"
+#include <chrono>
+#include <ciso646>
 
 using namespace std;
-
-normal_distribution<double> votingArea::dist;
 
 void votingArea::swing(unique_ptr<map<string,double>> swingVals, bool randomness){
 
@@ -34,7 +34,10 @@ void votingArea::swing(unique_ptr<map<string,double>> swingVals, bool randomness
 				}
 
 				swingMap[it->first] = (it->second+randSwing)*normFactor;
-			//cout<<it->first<<" swings by "<<swingMap[it->first]<<endl;
+				//cout<<it->first<<" swings by "<<(100*swingMap[it->first]/normFactor)<<" %"<<endl;
+			}
+			else {
+				//cout << "Seat not contested by " << it->first << endl;
 			}
 		}
 	
@@ -107,4 +110,14 @@ bool votingArea::partyContestsSeat(const string& party){
 		if(party == it.first) return true;
 	}
 	return false;
+}
+void votingArea::print() {
+
+	cout << "Results for voting area: " << name << endl;
+	for (auto votePair : votesCast) {
+
+		cout << votePair.first << ": " << votePair.second << endl;
+
+	}
+
 }

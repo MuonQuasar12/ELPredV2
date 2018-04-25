@@ -11,6 +11,7 @@
 #include <chrono>
 #include <memory>
 #include <algorithm>
+#include <ciso646>
 
 using namespace std;
 
@@ -22,31 +23,35 @@ election elProj::getLatest(){
 
 void elProj::addNewResult(){
 
+	cout << "Add new result" << endl;
+
 	unique_ptr<constituencyBase> constit = std::move(elPred::constitSearch(oldElWDec));
 
 	if(constit->getName() == "null") return;
 
-	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constit)).get()));
+	unique_ptr<constituencyBase> tmpConstitPtr = std::move(elPred::enterNewResults(constit->clone()));
+
+	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> ( tmpConstitPtr.release() ));
 
 	if(newConstit->getParty()== "null") return;
 
-	election tmpEl = std::move(oldElWDec);
+	election tmpEl = oldElWDec;
 
-	oldElWDec = std::move(tmpEl.addNewResult(std::move(newConstit)));
+	oldElWDec = tmpEl.addNewResult(newConstit->clone());
 
 	//check if result has already been added
 	for(int i =0; i<setConstits.size(); i++){
 
 		if(setConstits[i].first->getName() == newConstit->getName()){
 
-			setConstits[i] = make_pair(std::move(constit),std::move(newConstit));
+			setConstits[i] = make_pair(constit->clone(),newConstit->clone());
 
 			return;
 		}
 
 	}	
 
-	setConstits.push_back(make_pair(std::move(constit),std::move(newConstit)));
+	setConstits.push_back(make_pair(constit->clone(),newConstit->clone()));
 
 	cout<<"Checking options"<<endl;
 
@@ -62,6 +67,8 @@ void elProj::addNewResult(){
 }
 
 void elProj::removeResult(){
+
+	cout << "Remove result" << endl;
 
 	cout<<"Enter a constituency's number to remove it, E to exit"<<endl;
 
@@ -80,7 +87,7 @@ void elProj::removeResult(){
 	}
 
 	string input;
-	int choice;
+	int choice = -1;
 
 	while(true){
 
@@ -131,7 +138,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 	//iterate over set constits
 	//sort set constits by area and add to total votes by area and total votes
 	for(auto& constitPair : setConstits){
-		constitsByArea[constitPair.first->getArea()].push_back(std::move(constitPair));
+		constitsByArea[constitPair.first->getArea()].push_back(make_pair(constitPair.first->clone(),constitPair.second->clone()));
 		totalVotesArea[constitPair.first->getArea()] += constitPair.second->getVotesCast();
 		totalVotes += constitPair.second->getVotesCast();
 	}
@@ -146,9 +153,9 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 
 		for(auto& constitPair : AreaConsitVec.second){
 
-			map<string,double> constitSwing = constitPair.second->getSwings(std::move(constitPair.first));
+			map<string,double> constitSwing = constitPair.second->getSwings(constitPair.first->clone());
 
-			for(auto partySwing = constitSwing.begin(); partySwing != constitSwing.end(); partySwing++){
+			for(auto partySwing = constitSwing.begin(); partySwing != constitSwing.end(); ++partySwing){
 
 				//check swing has been applied to party in area
 				if(areaSwing.find(partySwing->first) == areaSwing.end()){
@@ -281,26 +288,30 @@ void elProj::print(int choice){
 }
 void elProj::printDeclared(){
 
+	cout << "Print declared seats" << endl;
+
 	for(auto& constitPair : setConstits){
 
-		unique_ptr<constituencyFPTP> FPTPConstit1 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.first)).get()));
-		unique_ptr<constituencyFPTP> FPTPConstit2 (dynamic_cast<constituencyFPTP*> (elPred::enterNewResults(std::move(constitPair.second)).get()));
+		constituencyFPTP FPTPConstit1 = dynamic_cast<constituencyFPTP&> (*constitPair.first);
+		constituencyFPTP FPTPConstit2 = dynamic_cast<constituencyFPTP&> (*constitPair.second);
 
 		string holdGain;
 
-		if(FPTPConstit2->isHeld()){
-			holdGain = " ("+FPTPConstit2->getParty()+" HOLD)";
+		if(FPTPConstit2.isHeld()){
+			holdGain = " ("+FPTPConstit2.getParty()+" HOLD)";
 		}
 		else{
-			holdGain = " ("+FPTPConstit2->getParty()+" GAIN from "+FPTPConstit1->getParty()+")";
+			holdGain = " ("+FPTPConstit2.getParty()+" GAIN from "+FPTPConstit1.getParty()+")";
 		}
 
-		cout<<FPTPConstit2->getName()<<holdGain<<endl;
+		cout<<FPTPConstit2.getName()<<holdGain<<endl;
 
 	}
 
 }
 void elProj::printProjectedGains(election el){
+
+	cout << "Print projected gains" << endl;
 
 	if(el.numConstits()==0){
 		el = projectionList.back();
@@ -332,7 +343,6 @@ void elProj::printProjectedGains(election el){
 
 void elProj::project(bool randomness){
 
-
 	if(randomness){
 
 		clock_t begin = clock();
@@ -341,8 +351,22 @@ void elProj::project(bool randomness){
 
 		for(int i = 0; i<100; i++){
 			unique_ptr<map<int,map<string,double>>> swingMap (new map<int,map<string,double>>(getSwingMap(randomness)));
+			
+			if (i == 0) {
+				cout << "Swing map for area 9" << endl;
+				for (auto swingPair : swingMap->at(9)) {
+					cout << swingPair.first << ": " << swingPair.second << endl;
+				}
+			}
+			
 			elVec.emplace_back(oldElWDec.swing(std::move(swingMap),true));
+
+			if (i == 0) {
+				elVec[i].print();
+			}
+
 			//printProjectedGains(elVec.back());
+			
 		}
 
 		checkResults(elVec);
@@ -357,7 +381,14 @@ void elProj::project(bool randomness){
 
 	else{
 		unique_ptr<map<int,map<string,double>>> swingMap (new map<int,map<string,double>>(getSwingMap(randomness)));
+		
+		cout << "Swing map for area 9" << endl;
+		for (auto swingPair : swingMap->at(9)) {
+			cout << swingPair.first << ": " << swingPair.second << endl;
+		}
+		
 		projectionList.emplace_back(oldElWDec.swing(std::move(swingMap)));
+
 	}
 }
 void elProj::checkResults(vector<election> elVec){

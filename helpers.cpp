@@ -1,6 +1,7 @@
 #include "helpers.h"
 #include "constituencyBase.h"
 #include "constituencyFPTP.h"
+#include "votingArea.h"
 #include "election.h"
 #include <iostream>
 #include <string>
@@ -20,10 +21,14 @@ namespace elPred{
 	election loadfile(string fileName){
 
 		ifstream inputFile(fileName);
+		if (!inputFile.is_open()) {
+			cerr << "Error: could not open file" << endl;
+			//exit(1);
+		}
 
 		string line;
 
-		cout<<"Creating constitVec pointer"<<endl;
+		//cout<<"Creating constitVec pointer"<<endl;
 
 		unique_ptr<vector<unique_ptr<constituencyBase>>> constitVec(new vector<unique_ptr<constituencyBase>>());
 
@@ -116,7 +121,7 @@ namespace elPred{
 			line_no++;
 		}		
 
-		cout<<"returning election object"<<endl;
+		//cout<<"returning election object"<<endl;
 
 		return election(constitVec);
 
@@ -147,7 +152,7 @@ namespace elPred{
 				slimmedConstitVec.clear();
 				for(auto& constit : constitVec){
 
-					slimmedConstitVec.push_back(std::move(constit));
+					slimmedConstitVec.push_back(constit->clone());
 
 				}
 
@@ -163,7 +168,7 @@ namespace elPred{
 					transform(constitName.begin(), constitName.end(), constitName.begin(), ::tolower);
 
 					if (constitName.find(input) != std::string::npos) {
-    					slimmedConstitVec.push_back(std::move(constit));
+    					slimmedConstitVec.push_back(constit->clone());
 					}
 	
 				}
@@ -235,7 +240,7 @@ namespace elPred{
 
 				else
 				{
-					return std::move(slimmedConstitVec[tmpVal]);
+					return slimmedConstitVec[tmpVal]->clone();
 				}
 				continue;
 			}
@@ -355,6 +360,8 @@ namespace elPred{
 
 	unique_ptr<constituencyBase> enterNewResults(unique_ptr<constituencyBase> constit){
 
+		unique_ptr<constituencyBase> outPtr;
+
 		while(true){
 
 			cout<<"Enter new results for "<<constit->getName()<<endl;
@@ -406,13 +413,20 @@ namespace elPred{
 
 				if(input == "Y"){
 
-					unique_ptr<constituencyFPTP> outConstit (dynamic_cast<constituencyFPTP*>(constit.get()));
+					constituencyFPTP* tmp = dynamic_cast<constituencyFPTP*>(constit.get());
+					unique_ptr<constituencyFPTP> outConstit;
+					if (tmp != nullptr) {
+						constit.release();
+						outConstit.reset(tmp);
+					}
+
 					string originalWinner = outConstit->getParty();
-					outConstit->getVoteArea("")->setVals(newRes);
+
+					outConstit->getVoteArea("").setVals(newRes);
 					outConstit->setPreventSwing(true);
 					outConstit->setHold(originalWinner==winner.first);
 
-					return outConstit;
+					return std::move(outConstit);
 				}
 				else if(input == "N")
 					break;

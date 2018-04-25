@@ -6,6 +6,7 @@
 #include <random>
 #include <chrono>
 #include <memory>
+#include <ciso646>
 
 using namespace std;
 

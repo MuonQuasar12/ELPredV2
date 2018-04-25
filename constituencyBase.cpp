@@ -1,6 +1,7 @@
 #include <string>
 #include <map>
 #include "constituencyBase.h"
+#include <ciso646>
 
 using namespace std;
 
@@ -48,16 +49,19 @@ void constituencyBase::addVoteArea(string nameArea, int electorateArea, map<stri
 	}
 
 }
-unique_ptr<votingArea> constituencyBase::getVoteArea(string nameArea){
+votingArea& constituencyBase::getVoteArea(string nameArea){
 
-	for(auto areaPair : votingAreas){
+	for(auto& areaPair : votingAreas){
 
 		if(areaPair.first == nameArea)
-			return unique_ptr<votingArea>(new votingArea(areaPair.second));
+			return areaPair.second;
 
 	}
 
-	return unique_ptr<votingArea>();
+	cerr << "Error: Voting area: " << nameArea << " not found in constituency " << name << endl;
+	exit(1);
+
+	return votingAreas[0]; //this line is here so code complies, never actually executed
 
 }
 int constituencyBase::getVotesCast(const string& party){

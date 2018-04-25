@@ -1,4 +1,5 @@
 #include "constituency.h"
+#include "votingArea.h"
 #include "election.h"
 #include "helpers.h"
 #include "elProj.h"
@@ -18,6 +19,7 @@ void newResultsTest();
 void newResultsTest2();
 
 normal_distribution<double> constituency::dist = normal_distribution<double>(0.0,0.04);
+normal_distribution<double> votingArea::dist = normal_distribution<double>(0.0, 0.04);
 
 int main(){
 

@@ -32,11 +32,11 @@ private:
 
 public:
 	election(){
-		cout<<"Default constructor"<<endl;
+		//cout<<"election::Default constructor"<<endl;
 	}
 	election(unique_ptr<vector<unique_ptr<constituencyBase>>>& constits, bool isAProj = false){
 		
-		cout<<"Election Constructor A"<<endl;
+		//cout<<"election::Constructor A"<<endl;
 
 		constitVec.clear();
 
@@ -54,11 +54,11 @@ public:
 		//cout<<"Finished Intialising"<<endl;
 		isProj_ = isAProj;
 		if(isAProj) name = "GE2017proj";
-		cout<<"Done constructing"<<endl;
+		//cout<<"Done constructing"<<endl;
 	}
 	election(date Date_,vector<unique_ptr<constituencyBase>> constits){
 		
-		cout<<"Election Contructor B"<<endl;
+		//cout<<"election::Contructor B"<<endl;
 
 		Date = Date_;
 			
@@ -72,11 +72,13 @@ public:
 
 		init();
 
-		cout<<"Done constructing"<<endl;
+		//cout<<"Done constructing"<<endl;
 	}
 	election(const election &el){
 		
-		cout<<"Election copy constructor"<<endl;
+		//cout<<"election::copy constructor"<<endl;
+
+		//el.constitVec[1]->print(1);
 
 		Date = date(el.getDate());
 
@@ -91,14 +93,14 @@ public:
 		isProj_ = el.isProj_;
 		init();
 
-		cout<<"Done constructing"<<endl;
+		//cout<<"Done constructing"<<endl;
 	}
 	election& operator=(const election& otherEl){
 
-		cout<<"Election copy assignment"<<endl;
+		//cout<<"Election copy assignment"<<endl;
 
 		name = otherEl.name;
-		date Date = otherEl.Date;
+		Date = otherEl.Date;
 
 		constitVec.clear();
 
@@ -112,7 +114,7 @@ public:
 
 		init();
 
-		cout<<"Returning copy"<<endl;
+		//cout<<"Returning copy"<<endl;
 
 		return *this;
 

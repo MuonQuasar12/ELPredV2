@@ -8,6 +8,7 @@
 #include <memory>
 #include <random>
 #include "constituencyBase.h"
+#include <iostream>
 
 using namespace std;
 
@@ -25,11 +26,26 @@ public:
 	constituencyFPTP(string name_, string MP_, string country_, string county_, int area_, bool isHeld = true, bool preventSwing = false):
 	constituencyBase(name_,country_,county_,area_,preventSwing)
 	{
+		//cout<<"constituencyFPTP::parameterised constructor"<<endl;
+
 		MP = MP_;
 		hold = isHeld;
 	}
 	constituencyFPTP(){
+
+		//cout<<"constituencyFPTP::default constructor"<<endl;
+
 		name = "null";
+	}
+	constituencyFPTP(const constituencyFPTP& con): 
+	constituencyBase(con)
+	{
+		//cout<<"constituencyFPTP::copy constructor"<<endl;
+
+		MP = con.MP;
+		hold = con.hold;
+		weight = con.weight;
+
 	}
 
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false) override;
