@@ -67,6 +67,34 @@ int constituencyFPTP::getNumSeats(string party){
 	else return 0;
 
 }
+void constituencyFPTP::addNewResult(string voteAreaName, map<string, int> results){
+
+	//check if hold/gain
+	string initParty = getParty();
+
+	//now apply changes
+	constituencyBase::addNewResult(voteAreaName, results);
+
+	string newParty = getParty();
+
+	hold = (initParty == newParty);
+
+}
+string constituencyFPTP::lineInfo(){
+
+	string gainHold;
+	if(this->preventSwing()){
+		if(isHeld())
+			gainHold = " HOLD";
+		else
+			gainHold = " GAIN";
+	}
+
+	string outStr = name + " (" + getParty() + gainHold + ")";
+
+	return outStr;
+
+}
 
 void constituencyFPTP::print(int opt){
 
@@ -98,8 +126,6 @@ void constituencyFPTP::print(int opt){
 	}
 	if(opt == 4)
 		cout<<"Seat: "<<getName()<<" area: "<<getArea()<<" ("<<getParty()<<")"<<" turnout "<<(100*getTurnout())<<"%, "<<partiesContestingSeat().size()<<" parties contesting seat. Majority "<<(getMajorityFrac()*100)<<"% over "<<getSecondPlace()<<endl;
-
-	cout<<"Finished printing"<<endl;
 
 }
 unique_ptr<constituencyBase> constituencyFPTP::clone()const{

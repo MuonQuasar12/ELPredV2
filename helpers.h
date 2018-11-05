@@ -13,7 +13,7 @@ namespace elPred{
 
 	static std::default_random_engine generator (std::chrono::system_clock::now().time_since_epoch().count());
 
-	election loadfile(std::string fileName);
+	election loadfile(std::string fileName, std::string type);
 
 	unique_ptr<constituencyBase> constitSearch(election el);
 

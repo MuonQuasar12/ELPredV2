@@ -50,6 +50,7 @@ public:
 
 	void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
 	void setVals(map<string,int> newVotes){votesCast = newVotes;}
+	void setVals(string party, int newVotes);
 	int getElectorate(){return electorate;}
 	string getName(){return name;}
 	int getVotesCast(const string& party){return votesCast[party];}
@@ -59,9 +60,14 @@ public:
 	map<string, int> getVotesMap() { return votesCast; }
 	map<string,double> getVoteShareMap();
 	void setPreventSwing(bool opt){doNotSwing = opt;}
+	bool getPreventSwing(){return doNotSwing;}
 	map<string,double> getSwing(votingArea oldResult);
 	bool partyContestsSeat(const string& party);
 	void print();
+	vector<string> getPartyList();
+
+	votingArea operator+(const votingArea& vt);
+	votingArea& operator+=(const votingArea& vt);
 
 };
 

@@ -45,6 +45,7 @@ public:
 
 	virtual map<string,int> getSeats(map<string,int> seatPreMap = null_map()) override;
 	virtual int getNumSeats(string party) override{return seatsMap[party];} ;
+	virtual int getNumSeats() override;
 
 	map<string,int> getFPTPSeats();
 	map<string,int> getPRSeats();

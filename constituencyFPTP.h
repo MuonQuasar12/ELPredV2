@@ -40,7 +40,6 @@ public:
 	constituencyFPTP(const constituencyFPTP& con): 
 	constituencyBase(con)
 	{
-		//cout<<"constituencyFPTP::copy constructor"<<endl;
 
 		MP = con.MP;
 		hold = con.hold;
@@ -53,7 +52,10 @@ public:
 	string getMP(){return MP;}
 	string getParty();
 	string getSecondPlace();
+	virtual int getNumSeats() override{return weight;}
 	
+	virtual bool changedHands() override {return !hold;}
+
 	int getMajority();
 	double getMajorityFrac();
 	bool isHeld(){return hold;}
@@ -61,7 +63,9 @@ public:
 	void setWeight(double w){weight = w;}
 	double getWeight(){return weight;}
 	virtual int getNumSeats(string party) override;
+	virtual void addNewResult(string voteAreaName, map<string, int> results) override;
 
+	virtual string lineInfo() override;
 	virtual void print(int opt = 1) override;
 
 	virtual unique_ptr<constituencyBase> clone() const override;

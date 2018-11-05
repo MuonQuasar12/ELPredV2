@@ -14,16 +14,106 @@ void constituencyPAL::setPreventSwing(int seg, bool opt) {
 		constituencyBase::setPreventSwing(opt);
 
 }
+void constituencyPAL::setElSeg(int elSeg){
+
+	segmentUpForEl = elSeg;
+
+	for(auto& vt : votingAreas){
+
+		if(vt.first == to_string(elSeg)) vt.second.setPreventSwing(false);
+		else vt.second.setPreventSwing(true);
+
+	}
+
+}
+int constituencyPAL::getNumSeats(string party){
+
+	if(seatsMap.empty()){
+		getSeats();
+	}
+
+	return seatsMap[party];
+
+}
+map<string, double> constituencyPAL::getVoteShareMap() {
+
+	if (areaOverrides.size() == 0)
+		return constituencyBase::getVoteShareMap();
+
+	votingArea tmpArea;
+
+	for (auto vtPair : areaOverrides) {
+		tmpArea += vtPair.second;
+	}
+	
+	return tmpArea.getVoteShareMap();
+}
+void constituencyPAL::addVoteArea(string nameArea, int electorateArea, map<string,int> votesCast_){
+
+	++numSeats;
+	hold[nameArea] = false;
+
+	constituencyBase::addVoteArea(nameArea,electorateArea,votesCast_);
+
+	initSeats = getSeats();
+	seatsMap = initSeats;
+
+}
 void constituencyPAL::swing(unique_ptr<map<string, double>> swingVals, bool randomness) {
 
+	if (swingFromAllBool) {
+
+		votingArea tmpVt (votingAreas[to_string(segmentUpForEl)]);
+
+		for (string party : parties) {
+
+			int totalVotes = 0;
+
+			for (auto vtAreaPair : votingAreas) {
+
+				totalVotes += vtAreaPair.second.getVotesCast(party);
+
+			}
+
+			totalVotes /= numSeats;
+
+			tmpVt.setVals(party, totalVotes);
+
+		}
+
+		if (areaOverrides.find(to_string(segmentUpForEl)) == areaOverrides.end()) {
+			areaOverrides[to_string(segmentUpForEl)] = tmpVt;
+		}
+	}
+
+	unique_ptr<map<string, double>> overrideSwings(new map<string, double>(*swingVals));
+
 	constituencyBase::swing(std::move(swingVals), randomness);
+
+	for (auto& areaPair : areaOverrides) {
+
+		areaPair.second.swing(std::move(overrideSwings));
+
+	}
 
 	seatsMap = getSeats();
 
 }
+void constituencyPAL::addNewResult(string voteAreaName, map<string, int> results) {
+
+	 votingArea tmp = votingAreas[voteAreaName];
+	 tmp.setVals(results);
+	 tmp.setPreventSwing(true);
+
+	 areaOverrides[voteAreaName] = tmp;
+
+}
+
 map<string, int> constituencyPAL::getSeats() {
 
 	vector<map<string, int>> voteMap;
+	seatHolders.clear();
+	seatHolders.push_back("0");
 
 	for (auto vt : votingAreas) {
 
@@ -37,13 +127,14 @@ map<string, int> constituencyPAL::getSeats() {
 	}
 	
 	vector<pair<string, int>> topN;
-	
 
-	while (topN.size() < numSeats) {
+	//fill results for last block vote
+	while (topN.size() < (numSeats-areaOverrides.size())) {
 
 		pair<string, int> tmp = make_pair("null", 0);
 
 		for (auto tmpMap : voteMap) {
+
 			for (auto tmpPair : tmpMap) {
 
 				bool cont = false;
@@ -69,11 +160,93 @@ map<string, int> constituencyPAL::getSeats() {
 			exit(1);
 		}
 
+		seatHolders.push_back(tmp.first);
 		++seatsMap[tmp.first];
+
+	}
+	//now for last non-block vote
+	for (auto areaPair : areaOverrides) {
+
+		pair<string, int> tmp = make_pair("null", 0);
+
+		for (auto pair : areaPair.second.getVotesMap()) {
+
+			if (pair.second > tmp.second) {
+				tmp = pair;
+			}
+
+		}
+		++seatsMap[tmp.first];
+		seatHolders.push_back(tmp.first);
+	}
+
+	return seatsMap;
+
+}
+string constituencyPAL::lineInfo(){
+
+	map<string,int> diffMap;
+
+	for(auto seatPair : initSeats){
+
+		int change = seatsMap[seatPair.first] - seatPair.second;
+
+		if(change != 0){
+			diffMap[seatPair.first] = change;
+		}
+
+	}
+
+	string outStr = (name + " (");
+
+	if(segmentUpForEl == 0){		
+
+		for(auto diffPair : diffMap){
+
+			string sign;
+			if(diffPair.second > 0) sign = "+";
+			else sign = "";
+
+			outStr += (diffPair.first + ": "+sign+to_string(diffPair.second)+" ");
+
+		}
+		if (diffMap.size() == 0) {
+			outStr += "no change";
+		}
+
+		outStr += ")";
+
+		return outStr;
+
+	}
+	else{
+
+		string loser, winner;
+
+		for(auto diffPair : diffMap){
+
+			if(diffPair.second == 1) winner = diffPair.first;
+			else if (diffPair.second == -1) loser = diffPair.first;
+
+		}
+
+		if( loser == winner ){
+
+			outStr += (seatHolders[segmentUpForEl]+" HOLD)");
+
+		}
+		else{
+
+			outStr += (winner+" GAIN from "+loser+")");
+
+		}
+
+		return outStr;
 
 	}
 
 }
+
 void constituencyPAL::print(int opt) {
 	if (opt == 1) {
 
@@ -121,5 +294,16 @@ void constituencyPAL::print(int opt) {
 unique_ptr<constituencyBase> constituencyPAL::clone()const {
 
 	return unique_ptr<constituencyBase>(new constituencyPAL(*this));
+
+}
+bool constituencyPAL::changedHands(){
+
+	for(auto seatPair : initSeats){
+
+		if(seatPair.second != seatsMap[seatPair.first]) return true;
+
+	}
+
+	return false;
 
 }

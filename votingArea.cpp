@@ -50,6 +50,12 @@ void votingArea::swing(unique_ptr<map<string,double>> swingVals, bool randomness
 	}
 }
 
+void votingArea::setVals(string party, int votes) {
+
+	votesCast[party] = votes;
+
+}
+
 int votingArea::getVotesCast(){
 
 	int total = 0;
@@ -96,8 +102,10 @@ map<string,double> votingArea::getSwing(votingArea oldResult){
 
 	map<string,double> newVoteShares = getVoteShareMap();
 	map<string,double> oldVoteShares = oldResult.getVoteShareMap();
-
+	
 	for(auto partyVotes : newVoteShares){
+
+		if(oldVoteShares.find(partyVotes.first) == oldVoteShares.end() ) continue; //probably not the best way to deal with parties not previously having stood
 
 		swings[partyVotes.first] = partyVotes.second - oldVoteShares[partyVotes.first];
 
@@ -119,5 +127,47 @@ void votingArea::print() {
 		cout << votePair.first << ": " << votePair.second << endl;
 
 	}
+
+}
+
+vector<string> votingArea::getPartyList(){
+
+	vector<string> parties;
+	for(auto vtpair : votesCast){
+
+		parties.push_back(vtpair.first);
+
+	}
+
+	return parties;
+
+}
+
+votingArea votingArea::operator+(const votingArea& vt){
+
+	votingArea outVt;
+
+	outVt.name = "sum";
+	outVt.electorate += vt.electorate;
+	
+	outVt.doNotSwing = true;
+	outVt.votesCast = votesCast;
+
+	for(auto vtPair : vt.votesCast){
+
+		if(outVt.votesCast[vtPair.first])
+			outVt.votesCast[vtPair.first] += vtPair.second;
+		else
+			outVt.votesCast[vtPair.first] = vtPair.second;
+	}
+
+	return outVt;
+
+}
+votingArea& votingArea::operator+=(const votingArea& vt){
+
+	*this = *this + vt;
+
+	return *this;
 
 }

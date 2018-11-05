@@ -1,10 +1,13 @@
 #include "constituency.h"
+#include "constituencyFPTP.h"
+#include "constituencyBase.h"
 #include "votingArea.h"
 #include "election.h"
 #include "helpers.h"
 #include "elProj.h"
 #include <iostream>
 #include <map>
+#include <memory>
 #include <vector>
 #include <cstdlib>
 #include <time.h>
@@ -17,20 +20,34 @@ void regswingtest();
 void regswingtest2();
 void newResultsTest();
 void newResultsTest2();
+void switzerland();
 
 normal_distribution<double> constituency::dist = normal_distribution<double>(0.0,0.04);
 normal_distribution<double> votingArea::dist = normal_distribution<double>(0.0, 0.04);
 
 int main(){
 
-	newResultsTest2();
-	
+	switzerland();
+	//newResultsTest2();
+
+	cout<<"Done"<<endl;
+
 	return 0;
+}
+void switzerland(){
+
+	election nationalCouncil = elPred::loadfile("../Suisse/natCouncil2007.csv","PR");
+
+	elProj natCouncilProj(nationalCouncil);
+
+	natCouncilProj.run();
+
 }
 void newResultsTest2(){
 
 	cout<<"Loading file"<<endl;
-	election GE2015 = elPred::loadfile("results2015b.csv");
+	election GE2015 = elPred::loadfile("../results2015b.csv","FPTP");
+	//election GE2015 = elPred::loadfile("sheffield.csv","PAL");
 
 	cout<<"File loaded, creating projection object"<<endl;
 	elProj testProj(GE2015);
@@ -38,12 +55,11 @@ void newResultsTest2(){
 	cout<<"Running projection"<<endl;
 	testProj.run();
 
-
 }
 
 void regswingtest(){
 
-	election GE2015 = elPred::loadfile("results2015.csv");	
+	election GE2015 = elPred::loadfile("results2015.csv","FPTP");	
 
 	//election GE2017 = elPred::loadfile("results2017.csv");	
 
@@ -95,7 +111,7 @@ void regswingtest(){
 }
 void regswingtest2(){
 
-	election GE2015 = elPred::loadfile("results2015.csv");	
+	election GE2015 = elPred::loadfile("results2015.csv","FPTP");	
 
 	//election GE2017 = elPred::loadfile("results2017.csv");	
 

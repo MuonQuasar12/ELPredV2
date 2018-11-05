@@ -34,8 +34,11 @@ public:
 	election(){
 		//cout<<"election::Default constructor"<<endl;
 	}
-	election(unique_ptr<vector<unique_ptr<constituencyBase>>>& constits, bool isAProj = false){
-		
+	~election(){
+		//cout<<"Destroying"<<endl;
+	}
+	election(unique_ptr<vector<unique_ptr<constituencyBase>>> constits, bool isAProj = false){
+
 		//cout<<"election::Constructor A"<<endl;
 
 		constitVec.clear();
@@ -90,10 +93,12 @@ public:
 
 		}
 
+		//cout<<"Cloned constits"<<endl;
+
 		isProj_ = el.isProj_;
 		init();
 
-		//cout<<"Done constructing"<<endl;
+		//cout<<"Done copy constructing"<<endl;
 	}
 	election& operator=(const election& otherEl){
 
@@ -128,8 +133,10 @@ public:
 	vector<unique_ptr<constituencyBase>> const& getConstitVec() const;
 	int numConstits();
 	int numConstits(int area);
+	int numSeats(int area = 0);
+	map<string, int> getSeatVec() { return seatVec; }
 
-	election swing(unique_ptr<map<int,map<string,double>>> swingVals, bool randomness = false);
+	election swing(unique_ptr<map<int,map<string,double>>>& swingVals, bool randomness = false);
 
 	int getVotes();
 	int getVotes(string party);
@@ -142,7 +149,7 @@ public:
 	int getSeats(string party);
 	int getSeats(const string& party, int area);
 	vector<string> getParties(int area = 0);
-	void print(int option = 1);
+	void print(int option = 1, election prevEl = election());
 	int getElectorate();
 	double getTurnout();
 	date getDate() const;

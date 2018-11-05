@@ -32,18 +32,25 @@ public:
 		system = sys;
 		numSeats = numSeats_;
 
-		initSeats = getSeats();
-		seatsMap = initSeats;
+		//these two might be here due to MMP considerations
+		//however, they will cause trouble as they require that the voting areas are added beforehand, which is not the case
+		//initSeats = getSeats();
+		//seatsMap = initSeats;
 	}
 
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false) override;
 
+	virtual void init() override{ initSeats = getSeats(); }
 	virtual map<string,int> getSeats(map<string,int> seatPreMap = null_map());
-	virtual int getNumSeats(string party) override {return seatsMap[party];}
+	virtual int getNumSeats(string party) override;
+	virtual int getNumSeats() override{return numSeats;}
 
 	virtual void print(int opt = 1) override;
+	virtual string lineInfo() override;
 
 	virtual unique_ptr<constituencyBase> clone() const override;
+
+	virtual bool changedHands() override;
 
 };
 

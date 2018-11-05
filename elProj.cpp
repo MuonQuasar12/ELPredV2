@@ -27,13 +27,13 @@ void elProj::addNewResult(){
 
 	unique_ptr<constituencyBase> constit = std::move(elPred::constitSearch(oldElWDec));
 
-	if(constit->getName() == "null") return;
+	if(!constit) return;
 
-	unique_ptr<constituencyBase> tmpConstitPtr = std::move(elPred::enterNewResults(constit->clone()));
+	unique_ptr<constituencyBase> newConstit  = std::move(elPred::enterNewResults(constit->clone()));
 
-	unique_ptr<constituencyFPTP> newConstit (dynamic_cast<constituencyFPTP*> ( tmpConstitPtr.release() ));
+	if(!newConstit) return;
 
-	if(newConstit->getParty()== "null") return;
+	newConstit->print(2);
 
 	election tmpEl = oldElWDec;
 
@@ -74,15 +74,7 @@ void elProj::removeResult(){
 
 	for(int i = 0; i < setConstits.size(); i++){
 
-		unique_ptr<constituencyFPTP> FPTPconstit (dynamic_cast<constituencyFPTP*> (setConstits[i].second.get()));
-
-		string holdGain;
-		if(FPTPconstit->isHeld())
-			holdGain = " HOLD";
-		else 
-			holdGain = " GAIN";
-
-		cout<<"("<<i<<") "<<setConstits[i].first->getName()<<" ("<<FPTPconstit->getParty()<<holdGain<<")"<<endl;
+		cout << "(" << i << ") " << setConstits[i].second->lineInfo() << endl;
 
 	}
 
@@ -117,6 +109,73 @@ void elProj::removeResult(){
 
 }
 
+void elProj::customSwing(bool randomness) {
+
+	cout << "Enter swing values for each party in percentage points, or E to exit" << endl;
+
+	map<int, map<string, double>> swingMap;
+
+	while (true) {
+
+		for (string party : initialEl.getParties()) {
+
+			double swing;
+
+			while (true) {
+				string inputString;
+
+				cout << party << ": ";
+				getline(cin, inputString);
+
+				if (inputString == "E") return;
+
+				stringstream inStream(inputString);
+
+				if (inStream >> swing)
+					break;
+
+				cout << "Input invalid, please try again" << endl;
+
+			}
+
+			swingMap[1][party] = (swing/100);
+
+		}
+
+		cout << "Swing values are: " << endl;
+		for (auto sPair : swingMap[1]) {
+
+			cout << sPair.first << ": " << (sPair.second * 100) << "%" << endl;
+
+		}
+		cout << "Accept (Y), re-enter values (N), exit (E)" << endl;
+		
+		while (true) {
+			cout << "Response: ";
+			string response;
+			getline(cin, response);
+
+			if (response == "Y") {
+				project(randomness, unique_ptr<map<int, map<string, double>>>(new map<int, map<string, double>>(swingMap)));
+				return;
+			}
+			else if (response == "N") {
+				break;
+			}
+			else if (response == "E") {
+				return;
+			}
+			else {
+				cout << endl << "Response not valid, please try again" << endl;
+				continue;
+			}
+
+		}
+
+	}
+
+}
+
 map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 
 	//oragnise constits by area
@@ -128,6 +187,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 	map<int,map<string,double>> randomMap;
 	double totalVotes = 0;
 
+	//global variation
 	normal_distribution<double> dist(0,0.03);
 
 	//init total votes in each area to 0
@@ -147,7 +207,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 	for(auto& AreaConsitVec : constitsByArea){
 
 		//if(randomness)
-		//	cout<<"Area "<<AreaConsitVec.first<<" has entries"<<endl;
+		//cout<<"Area "<<AreaConsitVec.first<<" has entries"<<endl;
 
 		map<string,double> areaSwing;
 
@@ -180,6 +240,7 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 		//if(randomness)
 		//	cout<<"Frac = "<<AreaConsitVec.second.size()<<"/"<<initialEl.numConstits(AreaConsitVec.first)<<", sigma = "<<sigma_area<<endl;
 
+		//variation between areas
 		normal_distribution<double> distArea(0,sigma_area);
 
 		double totalRand = 0;
@@ -264,6 +325,9 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 	}
 
 	if(false){
+
+		cout<<"Swings"<<endl;
+
 		for(auto areaPair : swingMap){
 			for(auto partyPair : areaPair.second){
 				cout<<"Area: "<<areaPair.first<<", party: "<<partyPair.first<<" = "<<partyPair.second<<endl;
@@ -278,11 +342,11 @@ map<int,map<string,double>> elProj::getSwingMap(bool randomness){
 void elProj::print(int choice){
 
 	if(choice == -1 or choice > projectionList.size()-1){
-		projectionList.back().print();
+		projectionList.back().print(1,initialEl);
 	}
 
 	else{
-		projectionList[choice].print();
+		projectionList[choice].print(1,initialEl);
 	}
 
 }
@@ -292,19 +356,7 @@ void elProj::printDeclared(){
 
 	for(auto& constitPair : setConstits){
 
-		constituencyFPTP FPTPConstit1 = dynamic_cast<constituencyFPTP&> (*constitPair.first);
-		constituencyFPTP FPTPConstit2 = dynamic_cast<constituencyFPTP&> (*constitPair.second);
-
-		string holdGain;
-
-		if(FPTPConstit2.isHeld()){
-			holdGain = " ("+FPTPConstit2.getParty()+" HOLD)";
-		}
-		else{
-			holdGain = " ("+FPTPConstit2.getParty()+" GAIN from "+FPTPConstit1.getParty()+")";
-		}
-
-		cout<<FPTPConstit2.getName()<<holdGain<<endl;
+		cout<<constitPair.second->lineInfo()<<endl;
 
 	}
 
@@ -321,11 +373,9 @@ void elProj::printProjectedGains(election el){
 
 		bool declared = false;
 
-		constituencyFPTP constit = dynamic_cast<constituencyFPTP&>(*constitBase);
-
 		for(auto& constitPair : setConstits){
 
-			if(constit.getName() == constitPair.first->getName()){
+			if(constitBase->getName() == constitPair.first->getName()){
 				declared = true;
 				break;
 			}
@@ -333,15 +383,27 @@ void elProj::printProjectedGains(election el){
 		}
 		if(declared) continue;
 
-		if(constit.isHeld()) continue;
+		string lineInfo = constitBase->lineInfo();
 
-		cout<<"Area: "<<constit.getArea()<<", "<<constit.getName()<<" ("<<dynamic_cast<constituencyFPTP*>((oldElWDec.getConstit(constit.getName())).get())->getParty()<<" -> "<<constit.getParty()<<")"<<endl;
+		if (!constitBase->changedHands()) {
+			continue;
+		}
+		else {
+			cout << lineInfo << endl;
+		}
+
+		
 
 	}
 
 }
+void elProj::printSeat() {
 
-void elProj::project(bool randomness){
+	unique_ptr<constituencyBase> constit = elPred::constitSearch(projectionList.back());
+	constit->print(2);
+
+}
+void elProj::project(bool randomness, unique_ptr<map<int, map<string, double>>> swingMapIn){
 
 	if(randomness){
 
@@ -349,25 +411,46 @@ void elProj::project(bool randomness){
 
 		vector<election> elVec;
 
-		for(int i = 0; i<100; i++){
-			unique_ptr<map<int,map<string,double>>> swingMap (new map<int,map<string,double>>(getSwingMap(randomness)));
-			
-			if (i == 0) {
-				cout << "Swing map for area 9" << endl;
-				for (auto swingPair : swingMap->at(9)) {
-					cout << swingPair.first << ": " << swingPair.second << endl;
-				}
-			}
-			
-			elVec.emplace_back(oldElWDec.swing(std::move(swingMap),true));
+		for(int i = 0; i<100; ++i){
 
-			if (i == 0) {
-				elVec[i].print();
+			unique_ptr<map<int, map<string, double>>> swingMap;
+
+			if(!swingMapIn)
+				swingMap = unique_ptr<map<int,map<string,double>>> (new map<int,map<string,double>>(getSwingMap(randomness)));
+			
+			else {
+
+				swingMap = unique_ptr<map<int,map<string,double>>> (new map<int,map<string,double>>(*swingMapIn));
+
+				//random variation in each constituency
+				normal_distribution<double> dist(0,0.03);
+
+				double totalTmp = 0;
+
+				for (auto partyPair = swingMap->at(1).begin(); partyPair != swingMap->at(1).end(); ++partyPair) {
+
+					if (next(partyPair) != swingMap->at(1).end()) {
+						double randNum = dist(elPred::generator);
+						swingMap->at(1)[partyPair->first] += randNum;
+						totalTmp += randNum;
+						//cout<<"Party: "<<partyPair->first<<", rand = "<<randNum<<endl;
+					}
+					else {
+						swingMap->at(1)[partyPair->first] -= totalTmp;
+						//cout<<"Party: "<<partyPair->first<<", rand = "<<(-totalTmp)<<"."<<endl;
+					}
+
+				}
+
 			}
+			
+			elVec.emplace_back(oldElWDec.swing(swingMap,true));
 
 			//printProjectedGains(elVec.back());
 			
 		}
+
+		cout<<"Checking results"<<endl;
 
 		checkResults(elVec);
 
@@ -380,20 +463,22 @@ void elProj::project(bool randomness){
 
 
 	else{
-		unique_ptr<map<int,map<string,double>>> swingMap (new map<int,map<string,double>>(getSwingMap(randomness)));
-		
-		cout << "Swing map for area 9" << endl;
-		for (auto swingPair : swingMap->at(9)) {
-			cout << swingPair.first << ": " << swingPair.second << endl;
+
+		unique_ptr<map<int, map<string, double>>> swingMap;
+
+		if(!swingMapIn)
+			swingMap = unique_ptr<map<int,map<string,double>>> (new map<int,map<string,double>>(getSwingMap(randomness)));
+		else{
+			swingMap = unique_ptr<map<int,map<string,double>>> (new map<int,map<string,double>>(*swingMapIn));
 		}
-		
-		projectionList.emplace_back(oldElWDec.swing(std::move(swingMap)));
+
+		projectionList.emplace_back(oldElWDec.swing(swingMap));
 
 	}
 }
 void elProj::checkResults(vector<election> elVec){
 
-	int majority = elVec[0].numConstits()/2+1;
+	int majority = elVec[0].numSeats()/2+1;
 
 	vector<string> parties = elVec[0].getParties();
 
@@ -411,9 +496,14 @@ void elProj::checkResults(vector<election> elVec){
 		seatNumreg[party] = std::move(tmpPtrReg);
 
 	}
+
 	partyMajorities["hung"] = 0;
 
-	int area = setConstits.back().second->getArea();
+	int area = 0;
+
+	if(setConstits.size()>0)
+		area = setConstits.back().second->getArea();
+
 
 	for(auto el = elVec.begin(); el != elVec.end(); ++el){
 
@@ -479,32 +569,38 @@ void elProj::run(){
 	while(true){
 
 		cout<<"Choose option: "<<endl;
-		cout<<"(E) Exit"<<endl
-			<<"(A) Add new result or edit a mistake"<<endl
-			<<"(X) Remove a result"<<endl
-			<<"(P) Project current results"<<endl
-			<<"(T) Project with randomness"<<endl
-			<<"(R) Show last projection"<<endl
-			<<"(D) Print declared seats"<<endl
-			<<"(G) Print projected gains"<<endl
-			<<"(S) Save current projection"<<endl
-			<<"(W) Write results"<<endl
-			<<"(WS) Write sim results"<<endl
-			<<"(L) Load a saved projection"<<endl
-			<<"(LR) Load with randomness"<<endl
-			<<"(O) Set options"<<endl;
+		cout << "(E) Exit" << endl
+			<< "(A) Add new result or edit a mistake" << endl
+			<< "(X) Remove a result" << endl
+			<< "(V) Swing with custom defined values" << endl
+			<< "(VR) Swing with custom defined values and randomness" << endl
+			<< "(P) Project current results" << endl
+			<< "(T) Project with randomness" << endl
+			<< "(R) Show last projection" << endl
+			<< "(D) Print declared seats" << endl
+			<< "(G) Print projected gains" << endl
+			<< "(RS) Print results from a seat" << endl
+			<< "(S) Save current projection" << endl
+			<< "(W) Write results" << endl
+			<< "(WS) Write sim results" << endl
+			<< "(L) Load a saved projection" << endl
+			<< "(LR) Load with randomness" << endl
+			<< "(O) Set options" << endl;
 
 		string input;
 		getline(cin,input);
 
-		if(input == "E") return;
+		if(input == "E") break;
 		else if(input == "A") addNewResult();
 		else if(input == "X") removeResult();
+		else if(input == "V") customSwing();
+		else if(input == "VR")customSwing(true);
 		else if(input == "P") project();
 		else if(input == "T") project(true);
 		else if(input == "R") print();
 		else if(input == "D") printDeclared();
 		else if(input == "G") printProjectedGains();
+		else if(input == "RS") printSeat();
 		else if(input == "S") saveProj();
 		else if(input == "W") writeProjResults();
 		else if(input == "WS") writeSimResults();
@@ -513,6 +609,8 @@ void elProj::run(){
 		else if(input == "O") setOpts();
 		else cout<<"Input not valid, try again"<<endl;
 	}
+
+	cout<<"Quitting"<<endl;
 
 }
 void elProj::setOpts(){
@@ -804,7 +902,7 @@ void elProj::loadProj(bool randomness){
 	string input;
 	getline(cin,input);
 
-	election tmpEl = elPred::loadfile(input);
+	election tmpEl = elPred::loadfile(input,"PR");
 
 	projectionList.clear();
 	setConstits.clear();
@@ -818,7 +916,7 @@ void elProj::loadProj(bool randomness){
 		newConstit->setPreventSwing(true);
 
 		election tmpEl2 = oldElWDec;
-		oldElWDec = tmpEl2.addNewResult(std::move(newConstit));
+		oldElWDec = tmpEl2.addNewResult(newConstit->clone());
 
 		setConstits.push_back(make_pair(std::move(prevConstit),std::move(newConstit)));
 

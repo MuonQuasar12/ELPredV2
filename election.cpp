@@ -27,7 +27,7 @@ election election::addNewResult(unique_ptr<constituencyBase> newConstit){
 
 	}
 
-	return election(newConstVec);
+	return election(std::move(newConstVec));
 
 }
 
@@ -117,7 +117,21 @@ int election::numConstits(int area){
 
 }
 
-election election::swing(unique_ptr<map<int,map<string,double>>> swingVals, bool randomness){
+int election::numSeats(int area){
+
+	int count = 0;
+
+	for(auto& constit : constitVec){
+
+		count += constit->getNumSeats();
+
+	}
+
+	return count;
+
+}
+
+election election::swing(unique_ptr<map<int,map<string,double>>>& swingVals, bool randomness){
 
 	unique_ptr<vector<unique_ptr<constituencyBase>>> newConstVec(new vector<unique_ptr<constituencyBase>>());
 
@@ -141,8 +155,27 @@ election election::swing(unique_ptr<map<int,map<string,double>>> swingVals, bool
 	}
 
 	for(auto& constit : constitVec){
-		
-		unique_ptr<map<string,double>> swingArea(new map<string,double>(swingVals->at(constit->getArea())));
+
+		unique_ptr<map<string, double>> swingArea(new map<string, double>());
+
+		map<string, double> tmpSwing;
+
+		if (swingVals->size() > 1) {
+
+			tmpSwing = swingVals->at(constit->getArea());
+
+		}
+		else {
+
+			tmpSwing = swingVals->at(1);
+
+		}
+
+		for (auto swingPair : tmpSwing) {
+
+			swingArea->emplace(swingPair.first,swingPair.second);
+
+		}
 
 		unique_ptr<constituencyBase> constitCopy = constit->clone();
 
@@ -152,7 +185,7 @@ election election::swing(unique_ptr<map<int,map<string,double>>> swingVals, bool
 
 	}
 
-	return election(newConstVec,true);
+	return election(std::move(newConstVec),true);
 
 }
 
@@ -246,11 +279,40 @@ vector<string> election::getParties(int area){
 	return parties;
 
 }
-void election::print(int option){
+void election::print(int option, election prevEl){
+
+	map<string, int> differences;
+	if (prevEl.numConstits() > 0) {
+		cout<<"Filling"<<endl;
+		for (auto seatPair : seatVec) {
+
+			differences[seatPair.first] = seatPair.second - prevEl.getSeats(seatPair.first);
+
+		}
+
+	}
+	else{
+
+		
+
+
+	}
+
 	cout<<"Result of election"<<endl
 		<<"Seats: "<<endl;
 	for(auto it : seatVec){
-		cout<<it.first<<": "<<it.second<<endl;
+		cout << it.first << ": " << it.second;
+	
+		if (!differences.empty()) {
+
+			string sign;
+			if (differences[it.first] > 0) sign = "+";
+			else sign = "";
+
+			cout << " (" << sign << differences[it.first] << ")";
+		}
+			
+		cout<<endl;
 	}
 	if(option == 2){
 		cout<<"Votes: "<<endl;

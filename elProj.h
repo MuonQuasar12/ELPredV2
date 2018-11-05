@@ -37,20 +37,23 @@ public:
 
 		initialEl = initEl;
 	}
-
+	
 	election getLatest();
 
 	void addNewResult();
 	void removeResult();
 
+	void customSwing(bool randomness = false);
+
 	void run();
 	void setOpts();
 
-	void project(bool randomness = false);
+	void project(bool randomness = false, unique_ptr<map<int,map<string,double>>> swingMap = nullptr);
 
 	void print(int choice = -1);
 	void printDeclared();
 	void printProjectedGains(election el = election());
+	void printSeat();
 	void checkResults(vector<election> elVec);
 
 	void saveProj();

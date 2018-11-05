@@ -1,12 +1,22 @@
 #include "constituencyMMP.h"
+#include "constituencyFPTP.h"
 #include <map>
 #include <vector>
 #include <string>
 #include <iostream>
+#include <memory>
 
 using namespace std;
 
 void constituencyMMP::swing(unique_ptr<map<string,double>> swingVals, bool randomness){
+
+	for(constituencyFPTP& FPTPconstit : subConstits){
+
+		unique_ptr<map<string,double>> tmpSwingVals(new map<string,double>(*swingVals));
+
+		FPTPconstit.swing(std::move(tmpSwingVals),randomness);
+
+	}
 
 	constituencyBase::swing(std::move(swingVals),randomness);
 
@@ -60,6 +70,20 @@ map<string,int> constituencyMMP::getPRSeats(){
 	return PRSeats;
 
 }
+int constituencyMMP::getNumSeats(){
+
+	int total = numSeats;
+
+	for(constituencyFPTP subConstit : subConstits){
+
+		total += subConstit.getNumSeats();
+
+	}
+
+	return total;
+
+}
+
 void constituencyMMP::print(int opt){
 
 	if(opt == 1){

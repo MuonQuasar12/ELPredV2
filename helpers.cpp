@@ -1,6 +1,8 @@
 #include "helpers.h"
 #include "constituencyBase.h"
 #include "constituencyFPTP.h"
+#include "constituencyPAL.h"
+#include "constituencyPR.h"
 #include "votingArea.h"
 #include "election.h"
 #include <iostream>
@@ -13,12 +15,13 @@
 #include <utility>
 #include <math.h>
 #include <memory>
+#include <cctype>
 
 using namespace std;
 
 namespace elPred{
 
-	election loadfile(string fileName){
+	election loadfile(string fileName, string type){
 
 		ifstream inputFile(fileName);
 		if (!inputFile.is_open()) {
@@ -41,7 +44,16 @@ namespace elPred{
 		string tmpstr;
 
 		//iterate over unimportant headers
-		for(int i=0; i<6; i++){
+
+		int maxHeaders = 0; //column at which party names begin
+		if(type == "PR"){
+			maxHeaders = 7;
+		}
+		else if(type == "FPTP"){
+			maxHeaders = 6;
+		}
+
+		for(int i=0; i<maxHeaders; i++){
 			getline(header_ss,tmpstr,',');
 		}
 
@@ -58,7 +70,7 @@ namespace elPred{
 			//read the line into a string stream
 			stringstream line_ss(line);
 
-			int area, electorate;
+			int area, electorate, nSeats;
 
 			map<string,int> results;
 
@@ -83,6 +95,20 @@ namespace elPred{
 			}
 			getline(line_ss, temp_entry, ',');
 			string County(temp_entry);
+
+			if(type == "PR"){
+				getline(line_ss, temp_entry, ',');
+				try{
+					nSeats = stoi(temp_entry);
+				}
+				catch(std::invalid_argument){
+					cout<<"Error, could not convert nSeats value"<<endl;
+					cout<<"Temp entry: "<<temp_entry<<endl;
+					cout<<"Line: "<<line_no<<endl;
+					exit(1);
+				}
+			}
+
 			getline(line_ss, temp_entry, ',');
 			try{
 				electorate = stoi(temp_entry);
@@ -93,8 +119,9 @@ namespace elPred{
 				cout<<"Line: "<<line_no<<endl;
 				exit(1);
 			}
-			int counter = 0;
 
+			int counter = 0;
+			
 			while(getline(line_ss,temp_entry,',')){
 
 				string tmptmp(temp_entry);				
@@ -115,15 +142,45 @@ namespace elPred{
 				counter++;
 			}
 
-			constitVec->emplace_back(unique_ptr<constituencyBase>(new constituencyFPTP(name,MP,Country,County,area)));
-			constitVec->back()->addVoteArea("",electorate,results);
+			if(type == "FPTP"){
+				constitVec->emplace_back(unique_ptr<constituencyBase>(new constituencyFPTP(name,MP,Country,County,area)));
+				constitVec->back()->addVoteArea("",electorate,results);
+			}
+			else if(type == "PAL"){
+
+				if(constitVec->empty() || constitVec->back()->getName() != name){
+					constitVec->emplace_back(unique_ptr<constituencyBase>(new constituencyPAL(name,Country,County,area)));
+					constitVec->back()->addVoteArea("1",electorate,results);
+					
+					(dynamic_cast<constituencyPAL*>(constitVec->back().get()))->swingFromAll(true);
+				}
+				else{
+					int numVt = constitVec->back()->getNumVotingAreas();
+					++numVt;
+					constitVec->back()->addVoteArea(to_string(numVt),electorate,results);
+					if(numVt == 3) (dynamic_cast<constituencyPAL*>(constitVec->back().get()))->setElSeg(3);
+				}
+				
+			}
+			else if(type == "PR"){
+
+				if(nSeats > 1)
+					constitVec->emplace_back(unique_ptr<constituencyBase>(new constituencyPR(name,Country,County,area,countSys::DHONDT,nSeats)));
+				else
+					constitVec->emplace_back(unique_ptr<constituencyBase>(new constituencyFPTP(name,MP,Country,County,area)));
+				
+				constitVec->back()->addVoteArea("",electorate,results);
+
+			}
+
+			constitVec->back()->init();
 
 			line_no++;
 		}		
 
 		//cout<<"returning election object"<<endl;
 
-		return election(constitVec);
+		return election(std::move(constitVec));
 
 	}
 
@@ -209,15 +266,7 @@ namespace elPred{
 
 		for(int i = 0; i<slimmedConstitVec.size(); i++){
 
-			string gainHold;
-			if(slimmedConstitVec[i]->preventSwing()){
-				if((dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].get()))->isHeld())
-					gainHold = " HOLD";
-				else
-					gainHold = " GAIN";
-			}
-
-			cout<<"("<<i<<") "<< slimmedConstitVec[i]->getName()<<" ("<<(dynamic_cast<constituencyFPTP*> (slimmedConstitVec[i].get()))->getParty()<<gainHold<<")"<<endl;
+			cout<<"("<<i<<") "<< slimmedConstitVec[i]->lineInfo() << endl;
 
 		}
 
@@ -240,6 +289,7 @@ namespace elPred{
 
 				else
 				{
+					cout<<"Returning the constit"<<endl;
 					return slimmedConstitVec[tmpVal]->clone();
 				}
 				continue;
@@ -249,9 +299,7 @@ namespace elPred{
 			
 		}	
 
-		
-
-		return unique_ptr<constituencyBase>();
+		return nullptr;
 
 	}
 
@@ -360,16 +408,53 @@ namespace elPred{
 
 	unique_ptr<constituencyBase> enterNewResults(unique_ptr<constituencyBase> constit){
 
-		unique_ptr<constituencyBase> outPtr;
+		unique_ptr<constituencyBase> emptyPtr = nullptr;
+
+		string vtAreaName;
+
+		cout<<"Please choose a voting area by entering its name, or E to exit"<<endl;
+		while(true && constit->getNumVotingAreas() > 1){
+
+			cout<<"Voting areas:"<<endl;
+			for(auto vt : constit->getVotingAreas()){
+
+				cout<<vt.first<<endl;
+
+			}
+			cout<<"Choice: ";
+
+			string input;
+			getline(cin,input);
+
+			if(input == "E")
+				return emptyPtr;
+			else{
+
+				for(auto vt : constit->getVotingAreas()){
+
+					if(vt.first == input) {vtAreaName = input; break;}
+
+				}
+
+				if(vtAreaName.empty()){
+					cout<<input<<" is not valid, please try again"<<endl;
+					continue;
+				}
+				else break;
+
+			}
+
+		}
 
 		while(true){
 
-			cout<<"Enter new results for "<<constit->getName()<<endl;
+			cout<<"Enter new results for "<<constit->getName()<<", area "<<vtAreaName<<endl;
 
 			map<string,int> newRes;
 
 			for(string party : constit->partiesContestingSeat()){
 
+				if(party == "OTH") continue;
 				int numVotes;
 
 				while(true){
@@ -386,21 +471,69 @@ namespace elPred{
 
 				}
 
-				newRes[party] = numVotes;
+				if(numVotes > 0)
+					newRes[party] = numVotes;
 
 			}
 
-			cout<<endl<<"results entered were"<<endl;
+			while(true){
 
-			pair<string,int> winner = pair<string,int>("null",0);
+				cout<<"Add additional parties (enter to skip)"<<endl;
+
+				string party;
+				
+				cout<<"Enter party name/abbreviation, enter then number of votes:"<<endl;
+
+				getline(cin,party);
+				stringstream inStream(party);
+
+				party.erase(remove(party.begin(),party.end(),' '),party.end());
+
+				if(party == "") break;
+
+				cout<<party<<": ";
+
+				int numVotes;
+
+				string inputString;
+				getline(cin,inputString);
+				stringstream inStreamVT(inputString);
+
+				if(inStreamVT>>numVotes){
+
+					newRes[party] = numVotes;
+					continue;
+
+				}
+
+				cout<<"Input invalid, please try again"<<endl;
+
+			}
+
+			int numVotesOTH;
+
+			while(true){
+				string inputString;
+	
+				cout<<"OTH: ";
+				getline(cin,inputString);
+				stringstream inStream(inputString);
+
+				if(inStream>>numVotesOTH)
+					break;
+
+				cout<<"Input invalid, please try again"<<endl;
+
+			}
+
+			if(numVotesOTH > 0)
+				newRes["OTH"] = numVotesOTH;
+
+			cout<<endl<<"results entered were"<<endl;
 
 			for(auto result : newRes){
 
 				cout<<result.first<<": "<<result.second<<endl;
-
-				if(result.second > winner.second){
-					winner = result;
-				}
 
 			}
 
@@ -413,18 +546,10 @@ namespace elPred{
 
 				if(input == "Y"){
 
-					constituencyFPTP* tmp = dynamic_cast<constituencyFPTP*>(constit.get());
-					unique_ptr<constituencyFPTP> outConstit;
-					if (tmp != nullptr) {
-						constit.release();
-						outConstit.reset(tmp);
-					}
+					unique_ptr<constituencyBase> outConstit = constit->clone();
 
-					string originalWinner = outConstit->getParty();
-
-					outConstit->getVoteArea("").setVals(newRes);
-					outConstit->setPreventSwing(true);
-					outConstit->setHold(originalWinner==winner.first);
+					outConstit->addNewResult(vtAreaName, newRes);
+					//outConstit->swing(std::move(constit));
 
 					return std::move(outConstit);
 				}
@@ -440,7 +565,7 @@ namespace elPred{
 
 		}
 
-		return unique_ptr<constituencyBase> (new constituencyFPTP());
+		return emptyPtr;
 
 	}
 

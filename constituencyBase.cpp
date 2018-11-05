@@ -1,6 +1,7 @@
 #include <string>
 #include <map>
 #include "constituencyBase.h"
+#include "votingArea.h"
 #include <ciso646>
 
 using namespace std;
@@ -9,9 +10,28 @@ void constituencyBase::swing(unique_ptr<map<string,double>> swingVals, bool rand
 
 	for(auto& areaPair : votingAreas){
 
-		areaPair.second.swing(std::move(swingVals),randomness);
+		unique_ptr<map<string, double>> tmpVals(new map<string, double>(*swingVals));
+
+		areaPair.second.swing(std::move(tmpVals),randomness);
 
 	}
+
+}
+void constituencyBase::swing(unique_ptr<constituencyBase> constit){
+
+	votingArea tmpNew;
+	votingArea tmpOrig;
+
+	for(auto vtPair : votingAreas){
+
+		if(vtPair.second.getPreventSwing()){
+			tmpNew += vtPair.second;
+			tmpOrig+= constit->getVoteArea(vtPair.first);
+		}
+
+	}
+
+	swing(unique_ptr<map<string,double>>(new map<string,double>(tmpNew.getSwing(tmpOrig))));
 
 }
 
@@ -44,7 +64,7 @@ void constituencyBase::addVoteArea(string nameArea, int electorateArea, map<stri
 			}
 		}
 
-		if(not inList) parties.push_back(votesPair.first);
+		if(!inList) parties.push_back(votesPair.first);
 
 	}
 
@@ -64,6 +84,28 @@ votingArea& constituencyBase::getVoteArea(string nameArea){
 	return votingAreas[0]; //this line is here so code complies, never actually executed
 
 }
+void constituencyBase::addNewResult(string voteAreaName, map<string, int> results) {
+
+	getVoteArea(voteAreaName).setVals(results);
+	getVoteArea(voteAreaName).setPreventSwing(true);
+
+	doNotSwing = true;
+
+	//regernate party list
+	parties.clear();
+
+	votingArea tmp;
+
+	for(auto vtPair : votingAreas){
+
+		tmp += vtPair.second;
+
+	}
+
+	parties = tmp.getPartyList();
+
+}
+
 int constituencyBase::getVotesCast(const string& party){
 
 	int total = 0;
@@ -159,6 +201,9 @@ map<string,double> constituencyBase::getSwings(unique_ptr<constituencyBase> oldR
 	map<string,double> oldVoteShares = oldResult->getVoteShareMap();
 
 	for(auto partyVotes : newVoteShares){
+
+		if(oldVoteShares.find(partyVotes.first) == oldVoteShares.end() ) continue; //probably not the best way to deal with parties not previously having stood
+		if(partyVotes.second == 0) continue;
 
 		swings[partyVotes.first] = partyVotes.second - oldVoteShares[partyVotes.first];
 

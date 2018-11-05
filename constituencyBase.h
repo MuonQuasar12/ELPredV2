@@ -35,6 +35,9 @@ public:
 		area = area_;
 		doNotSwing = preventSwing;
 	}
+
+	virtual ~constituencyBase(){
+	}
 	constituencyBase(){
 
 		//cout<<"constituencyBase::default Constructor"<<endl;
@@ -64,21 +67,29 @@ public:
 	}
 
 	virtual void swing(unique_ptr<map<string,double>> swingVals, bool randomness = false);
+	virtual void swing(unique_ptr<constituencyBase> constit); //swings unset areas based on the set ones
+
+	virtual void init() {/*nothing to be done*/};
 
 	string getName(){return name;};
 	string getCountry(){return country;};
 	string getCounty(){return county;};
 	int getArea(){return area;};
 	int getElectorate();
+	virtual int getNumSeats() = 0;
 
-	void addVoteArea(string nameArea, int electorateArea, map<string,int> votesCast_);
+	virtual bool changedHands() = 0;
+
+	virtual void addVoteArea(string nameArea, int electorateArea, map<string,int> votesCast_);
 	votingArea& getVoteArea(string nameArea);
+	int getNumVotingAreas(){return votingAreas.size();}
+	map<string,votingArea>getVotingAreas(){return votingAreas;}
 	
 	int getVotesCast(const string& party);
 	int getVotesCast();
 	double getVoteShare(const string& party);
 	double getTurnout();
-	map<string,double> getVoteShareMap();
+	virtual map<string,double> getVoteShareMap();
 	map<string,int> getVotesMap();
 	bool partyContestsSeat(const string& party);
 	vector<string> partiesContestingSeat(){return parties;}
@@ -86,9 +97,11 @@ public:
 	virtual void setPreventSwing(bool opt);
 	virtual int getNumSeats(string party) = 0;
 
+	virtual void addNewResult(string voteAreaName, map<string, int> results);
 	map<string,double> getSwings(unique_ptr<constituencyBase> oldResult);
 
 	virtual void print(int opt = 1) = 0;
+	virtual string lineInfo() = 0;
 
 	virtual unique_ptr<constituencyBase> clone() const = 0;
 
